@@ -171,7 +171,7 @@ describe('PromptHandler concurrency', () => {
         expect(controlManager.enableControl).toHaveBeenCalledWith({ createDefaultTab: false });
     });
 
-    it('asks browser control to create a default tab for standalone chat prompts', async () => {
+    it('does not create a default Google tab for host-tab prompts with webpage context', async () => {
         globalThis.chrome = {
             runtime: {
                 sendMessage: vi.fn(() => Promise.resolve()),
@@ -216,6 +216,59 @@ describe('PromptHandler concurrency', () => {
                 enableBrowserControl: true,
                 hostIsTab: true,
                 sidePanelTabId: 123,
+            },
+            sendResponse
+        );
+
+        await vi.waitFor(() =>
+            expect(controlManager.enableControl).toHaveBeenCalledWith({ createDefaultTab: false })
+        );
+    });
+
+    it('creates a default Google tab for true standalone chat prompts', async () => {
+        globalThis.chrome = {
+            runtime: {
+                sendMessage: vi.fn(() => Promise.resolve()),
+            },
+            tabs: {
+                get: vi.fn(() =>
+                    Promise.resolve({
+                        id: 700,
+                        title: 'Google Search',
+                        url: 'https://www.google.com/search?q=',
+                    })
+                ),
+                query: vi.fn(() => Promise.resolve([])),
+            },
+        };
+        const sessionManager = {
+            handleSendPrompt: vi.fn(() =>
+                Promise.resolve({
+                    action: 'GEMINI_REPLY',
+                    sessionId: 'session-1',
+                    status: 'success',
+                    text: 'done',
+                })
+            ),
+        };
+        const controlManager = {
+            setOwnerSidePanelTabId: vi.fn(),
+            setControlTaskTitle: vi.fn(),
+            enableControl: vi.fn(() => Promise.resolve(true)),
+            getTargetTabId: vi.fn().mockReturnValueOnce(null).mockReturnValue(700),
+            getSnapshot: vi.fn(() => Promise.resolve('snapshot')),
+        };
+        const handler = new PromptHandler(sessionManager, controlManager, null);
+        const sendResponse = vi.fn();
+
+        handler.handle(
+            {
+                action: 'SEND_PROMPT',
+                text: 'Open a browser',
+                model: 'gemini-test',
+                sessionId: 'session-1',
+                enableBrowserControl: true,
+                hostIsTab: true,
             },
             sendResponse
         );

@@ -65,6 +65,10 @@ export class UIController {
         document.body.classList.toggle('host-tab', context.isTab === true);
     }
 
+    setPageContextAvailable(isAvailable) {
+        document.body.classList.toggle('has-page-context', isAvailable === true);
+    }
+
     scheduleLayoutCheck() {
         if (this.layoutResizeFrame !== null) return;
 

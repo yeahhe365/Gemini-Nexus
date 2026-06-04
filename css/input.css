@@ -275,7 +275,7 @@ body.layout-wide .input-wrapper {
     color: var(--primary);
 }
 
-body.host-tab .tool-btn.context-aware {
+body:not(.has-page-context) .tool-btn.context-aware {
     display: none;
 }
 

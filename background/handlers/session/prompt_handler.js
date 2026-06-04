@@ -107,14 +107,15 @@ export class PromptHandler {
 
                 // AUTO-LOCK: If browser control enabled and no tab locked, lock to active tab
                 if (request.enableBrowserControl && this.controlManager) {
-                    this.controlManager.setOwnerSidePanelTabId(request.sidePanelTabId || null);
+                    const targetSidePanelTabId = request.sidePanelTabId || null;
+                    this.controlManager.setOwnerSidePanelTabId(targetSidePanelTabId);
                     this.controlManager.setControlTaskTitle(
                         getBrowserControlTaskTitle(request.text)
                     );
                     const currentLock = this.controlManager.getTargetTabId();
                     if (!currentLock) {
                         await this.controlManager.enableControl({
-                            createDefaultTab: request.hostIsTab === true,
+                            createDefaultTab: request.hostIsTab === true && !targetSidePanelTabId,
                         });
                         const lockedTabId = this.controlManager.getTargetTabId();
                         if (lockedTabId) {
@@ -124,7 +125,7 @@ export class PromptHandler {
                                 chrome.runtime
                                     .sendMessage({
                                         action: 'TAB_LOCKED',
-                                        tabId: request.sidePanelTabId || null,
+                                        tabId: targetSidePanelTabId,
                                         tab: toControlTabSummary(tab),
                                     })
                                     .catch(() => {});

@@ -51,6 +51,7 @@ function createUi() {
             updateSidePanelScope: vi.fn(),
         },
         setBrowserControlVisible: vi.fn(),
+        setPageContextAvailable: vi.fn(),
         setLoading: vi.fn(),
         updateBrowserControlState: vi.fn(),
         updateWebThinkingToggle: vi.fn(),
@@ -176,6 +177,26 @@ describe('AppController session restore behavior', () => {
 
         expect(app.currentTabId).toBe(123);
         expect(sessionManager.currentSessionId).toBe('real');
+    });
+
+    it('updates page-context availability from restored tab context', async () => {
+        const { app, ui } = createAppHarness();
+
+        await app.handleIncomingMessage({
+            data: {
+                action: 'RESTORE_SIDE_PANEL_TAB_CONTEXT',
+                payload: { tabId: 123 },
+            },
+        });
+        expect(ui.setPageContextAvailable).toHaveBeenCalledWith(true);
+
+        await app.handleIncomingMessage({
+            data: {
+                action: 'RESTORE_SIDE_PANEL_TAB_CONTEXT',
+                payload: { tabId: null },
+            },
+        });
+        expect(ui.setPageContextAvailable).toHaveBeenCalledWith(false);
     });
 
     it('restores saved groups and rerenders history after sessions are loaded', async () => {

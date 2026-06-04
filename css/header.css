@@ -20,7 +20,7 @@ body.layout-wide #history-toggle {
     display: none;
 }
 
-body.host-tab #open-full-page-btn {
+body.host-tab:not(.has-page-context) #open-full-page-btn {
     display: none;
 }
 

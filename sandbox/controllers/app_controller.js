@@ -305,6 +305,9 @@ export class AppController {
             this.currentTabUrl = payload?.url || '';
             this.currentTabTitle = payload?.title || '';
             this.boundSessionId = payload?.sessionId || null;
+            this.ui.setPageContextAvailable?.(
+                Number.isInteger(this.currentTabId) && this.currentTabId > 0
+            );
             if (this.sessionsRestored && this.sidePanelScope === DEFAULT_SIDE_PANEL_SCOPE) {
                 this.restoreRememberedTabSession();
             }

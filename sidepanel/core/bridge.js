@@ -48,11 +48,17 @@ const FORWARDED_RESPONSE_ACTIONS = new Set([
     'GET_PROVIDER_MODELS',
 ]);
 
-const HOST_ROUTED_ACTIONS = new Set(['GET_OPEN_TABS', 'SWITCH_TAB', 'TOGGLE_BROWSER_CONTROL']);
+const HOST_ROUTED_ACTIONS = new Set(['GET_OPEN_TABS', 'SWITCH_TAB']);
 
 function shouldRouteToHostTab(payload) {
     if (!payload || typeof payload !== 'object') return false;
     if (HOST_ROUTED_ACTIONS.has(payload.action)) return true;
+    return payload.action === 'SEND_PROMPT' && payload.enableBrowserControl === true;
+}
+
+function shouldRequirePageContextRoute(payload) {
+    if (!payload || typeof payload !== 'object') return false;
+    if (payload.action === 'TOGGLE_BROWSER_CONTROL') return true;
     return payload.action === 'SEND_PROMPT' && payload.enableBrowserControl === true;
 }
 
@@ -78,7 +84,7 @@ export class MessageBridge {
     }
 
     openFullPage() {
-        const url = chrome.runtime.getURL('sidepanel/index.html');
+        const url = chrome.runtime.getURL('sidepanel/index.html?standalone=1');
         chrome.tabs.create({ url });
     }
 
@@ -299,9 +305,11 @@ export class MessageBridge {
             return payload;
         }
 
-        const tabId = shouldRouteToHostTab(payload)
-            ? this._getMessageTargetTabId()
-            : this.state.getCurrentTabId();
+        const tabId = shouldRequirePageContextRoute(payload)
+            ? this.state.getCurrentTabId()
+            : shouldRouteToHostTab(payload)
+              ? this._getMessageTargetTabId()
+              : this.state.getCurrentTabId();
         if (!Number.isInteger(tabId) || tabId <= 0) {
             return payload;
         }

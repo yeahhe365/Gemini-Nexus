@@ -29,4 +29,14 @@ describe('UIController host context', () => {
         controller.setHostContext({ isTab: false });
         expect(document.body.classList.contains('host-tab')).toBe(false);
     });
+
+    it('marks whether the chat has a real webpage context', () => {
+        const controller = Object.create(UIController.prototype);
+
+        controller.setPageContextAvailable(true);
+        expect(document.body.classList.contains('has-page-context')).toBe(true);
+
+        controller.setPageContextAvailable(false);
+        expect(document.body.classList.contains('has-page-context')).toBe(false);
+    });
 });

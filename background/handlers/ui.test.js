@@ -45,7 +45,7 @@ describe('UIMessageHandler browser control tab ownership', () => {
         expect(sendResponse).toHaveBeenCalledWith({ status: 'processed' });
     });
 
-    it('asks browser control to create a default tab for standalone chat pages', () => {
+    it('does not create a default Google tab for host-tab chat pages with webpage context', () => {
         const sendResponse = vi.fn();
 
         const handled = handler.handle(
@@ -61,6 +61,25 @@ describe('UIMessageHandler browser control tab ownership', () => {
 
         expect(handled).toBe(true);
         expect(controlManager.setOwnerSidePanelTabId).toHaveBeenCalledWith(123);
+        expect(controlManager.enableControl).toHaveBeenCalledWith({ createDefaultTab: false });
+        expect(sendResponse).toHaveBeenCalledWith({ status: 'processed' });
+    });
+
+    it('creates a default Google tab for true standalone chat pages', () => {
+        const sendResponse = vi.fn();
+
+        const handled = handler.handle(
+            {
+                action: 'TOGGLE_BROWSER_CONTROL',
+                enabled: true,
+                hostIsTab: true,
+            },
+            {},
+            sendResponse
+        );
+
+        expect(handled).toBe(true);
+        expect(controlManager.setOwnerSidePanelTabId).toHaveBeenCalledWith(null);
         expect(controlManager.enableControl).toHaveBeenCalledWith({ createDefaultTab: true });
         expect(sendResponse).toHaveBeenCalledWith({ status: 'processed' });
     });

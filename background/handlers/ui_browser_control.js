@@ -1,11 +1,10 @@
 export function handleToggleBrowserControl(context, request, sender, sendResponse) {
     if (context.controlManager) {
-        context.controlManager.setOwnerSidePanelTabId?.(
-            context.getTargetSidePanelTabId(request, sender)
-        );
+        const targetSidePanelTabId = context.getTargetSidePanelTabId(request, sender);
+        context.controlManager.setOwnerSidePanelTabId?.(targetSidePanelTabId);
         if (request.enabled) {
             context.controlManager.enableControl({
-                createDefaultTab: request.hostIsTab === true,
+                createDefaultTab: request.hostIsTab === true && !targetSidePanelTabId,
             });
         } else {
             context.controlManager.disableControl();
