@@ -97,7 +97,7 @@ Gemini Nexus 可以选择连接到一个或多个外部 MCP 服务器（通过 *
 
 1. 启动您的 MCP 代理并在其中配置好 MCP 服务器。
 2. 在 **设置 (Settings) -> 连接 (Connection) -> 外部 MCP 工具 (External MCP Tools)** 中：
-    - 启用“外部 MCP 工具” (Enable External MCP Tools)。
+    - 启用"外部 MCP 工具" (Enable External MCP Tools)。
     - 新增或选择服务器条目；**活动服务器** (Active Server) 表示当前正在编辑的条目，对话时会使用所有已启用的服务器。
     - 选择传输协议并设置服务器 URL（SSE / 可流式传输的 HTTP / WebSocket）。
     - 如需自定义请求头，请使用 SSE 或可流式传输的 HTTP；浏览器扩展环境下 WebSocket 传输不支持自定义 headers。
@@ -134,8 +134,8 @@ Gemini Web 依赖逆向协议，可能随网站更新而变化。当前契约记
 #### 安装步骤
 
 1. 从 [Releases](https://github.com/yeahhe365/Gemini-Nexus/releases) 下载最新 ZIP 包并解压。
-2. Chrome 访问 `chrome://extensions/`，右上角开启 **“开发者模式”**。
-3. 点击 **“加载已解压的扩展程序”**，选择解压后的文件夹即可。
+2. Chrome 访问 `chrome://extensions/`，右上角开启 **"开发者模式"**。
+3. 点击 **"加载已解压的扩展程序"**，选择解压后的文件夹即可。
 
 #### 从源码构建与打包
 
@@ -144,7 +144,24 @@ npm install
 npm run package:extension
 ```
 
-打包完成后，Chrome 的 **“加载已解压的扩展程序”** 应选择 `artifacts/chrome-extension`。开发调试时也可以直接加载仓库根目录，但发布或手动安装推荐使用打包目录；`npm run build` 生成的 `dist/` 只是 Vite UI 构建产物，不是完整扩展目录。发布包会把多个 content scripts 按 `manifest.json` 中的顺序合并为单个 `content/index.js`，并重写包内 manifest，避免发布产物依赖一长串手工脚本顺序。
+打包完成后，Chrome 的 **"加载已解压的扩展程序"** 应选择 `artifacts/chrome-extension`。发布或手动安装推荐使用打包目录；`npm run build` 生成的 `dist/` 只是 Vite UI 构建产物，不是完整扩展目录。发布包会把多个 content scripts 按 `manifest.json` 中的顺序合并为单个 `content/index.js`，并重写包内 manifest，避免发布产物依赖一长串手工脚本顺序。
+
+#### 开发调试：加载未打包扩展
+
+如果只想快速测试修改，可以使用 `copy-to-dist.bat` 脚本将必要文件复制到 `dist/` 目录，然后在 Chrome 中加载该目录：
+
+```bash
+npm run build
+copy-to-dist.bat
+```
+
+然后在 Chrome 中：
+1. 访问 `chrome://extensions/`
+2. 开启 **开发者模式**
+3. 点击 **加载已解压的扩展程序**
+4. 选择项目根目录下的 `dist/` 文件夹
+
+> **注意**：`dist/` 目录仅用于开发调试，不包含完整的打包流程（如 content script 合并）。正式发布请使用 `npm run package:extension`。
 
 #### 发布到 Chrome Web Store
 

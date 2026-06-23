@@ -48,7 +48,7 @@ export class SidebarController {
         this.allGroups = [];
         this.currentSessionId = null;
         this.itemCallbacks = null;
-        this.renderState = { isGenerating: false, generatingSessionId: null };
+        this.renderState = { isGenerating: false, generatingSessionId: null, generatingSessionIds: [] };
         this.searchOpen = this.searchContainer ? !this.searchContainer.hidden : false;
         this.activeMenuId = null;
         this.activeMenuType = null;
@@ -467,9 +467,15 @@ export class SidebarController {
         this.allGroups = Array.isArray(groups) ? groups : [];
         this.currentSessionId = currentId;
         this.itemCallbacks = itemCallbacks || {};
+        const generatingSessionIds = Array.isArray(nextRenderState?.generatingSessionIds)
+            ? nextRenderState.generatingSessionIds.filter(Boolean)
+            : nextRenderState?.generatingSessionId
+              ? [nextRenderState.generatingSessionId]
+              : [];
         this.renderState = {
-            isGenerating: nextRenderState?.isGenerating === true,
-            generatingSessionId: nextRenderState?.generatingSessionId || null,
+            isGenerating: nextRenderState?.isGenerating === true || generatingSessionIds.length > 0,
+            generatingSessionId: nextRenderState?.generatingSessionId || generatingSessionIds[0] || null,
+            generatingSessionIds,
         };
 
         if (this.isCollapsedRecentOpen) {

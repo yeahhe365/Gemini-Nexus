@@ -44,6 +44,13 @@ function hasActiveModal() {
     return Boolean(document.querySelector(ACTIVE_MODAL_SELECTOR));
 }
 
+function isCurrentSessionGenerating(app) {
+    if (typeof app?.isCurrentSessionGenerating === 'function') {
+        return app.isCurrentSessionGenerating();
+    }
+    return app?.isGenerating === true;
+}
+
 function focusInputAtEnd(inputFn, delayMs = 0) {
     if (!inputFn) return;
 
@@ -169,7 +176,7 @@ export function bindInputEvents(app, ui, setResizeRef) {
                 return;
             }
 
-            if (keyEvent.key === 'Escape' && app.isGenerating) {
+            if (keyEvent.key === 'Escape' && isCurrentSessionGenerating(app)) {
                 keyEvent.preventDefault();
                 app.handleCancel();
                 return;
@@ -182,7 +189,7 @@ export function bindInputEvents(app, ui, setResizeRef) {
         };
 
         const handleSendClick = () => {
-            if (app.isGenerating) {
+            if (isCurrentSessionGenerating(app)) {
                 app.handleCancel();
             } else {
                 app.handleSendMessage();
@@ -238,7 +245,7 @@ export function bindInputEvents(app, ui, setResizeRef) {
             return;
         }
 
-        if (keyEvent.key === 'Escape' && app.isGenerating) {
+        if (keyEvent.key === 'Escape' && isCurrentSessionGenerating(app)) {
             keyEvent.preventDefault();
             app.handleCancel();
             return;

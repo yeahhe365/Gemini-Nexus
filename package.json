@@ -1,7 +1,7 @@
 {
     "name": "gemini-nexus",
     "private": true,
-    "version": "5.0.12",
+    "version": "9.0.4",
     "type": "module",
     "scripts": {
         "dev": "vite",

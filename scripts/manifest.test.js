@@ -286,4 +286,10 @@ describe('manifest content scripts', () => {
             await expect(stat(pathToCheck), resource).resolves.toBeTruthy();
         }
     });
+
+    it('copies the toolbar logo into dist for unpacked extension loading', async () => {
+        const copyScript = await readFile('copy-to-dist.bat', 'utf8');
+
+        expect(copyScript).toContain('copy "%ROOT%logo.png" "%DIST%\\logo.png"');
+    });
 });

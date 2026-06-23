@@ -1,5 +1,9 @@
 import { CONNECTION_STORAGE_KEYS } from '../../shared/settings/connection.js';
 import {
+    getSidePanelInputDraftKey,
+    normalizeSidePanelInputDrafts,
+} from './bridge_storage.js';
+import {
     createInitialRestoreMessages,
     createLocalStorageRestoreMessages,
 } from './state_messages.js';
@@ -138,13 +142,23 @@ export class StateManager {
             }
         );
 
-        chrome.storage.session.get(['geminiSidePanelSessionBindings'], (result) => {
+        chrome.storage.session.get(['geminiSidePanelSessionBindings', 'geminiSidePanelInputDrafts'], (result) => {
             const errorMessage = getRuntimeLastErrorMessage();
             if (errorMessage) {
                 console.warn('Failed to load side panel session state:', errorMessage);
-                this.sessionStorageData = { geminiSidePanelSessionBindings: {} };
+                this.sessionStorageData = {
+                    geminiSidePanelSessionBindings: {},
+                    geminiSidePanelInputDrafts: {},
+                };
             } else {
-                this.sessionStorageData = result || { geminiSidePanelSessionBindings: {} };
+                this.sessionStorageData = {
+                    ...(result || {}),
+                    geminiSidePanelSessionBindings:
+                        result?.geminiSidePanelSessionBindings || {},
+                    geminiSidePanelInputDrafts: normalizeSidePanelInputDrafts(
+                        result?.geminiSidePanelInputDrafts
+                    ),
+                };
             }
             this.trySendInitData();
         });
@@ -175,12 +189,21 @@ export class StateManager {
         }
 
         chrome.storage.onChanged.addListener((changes, areaName) => {
-            if (areaName === 'session' && changes.geminiSidePanelSessionBindings) {
-                this.sessionStorageData = {
-                    geminiSidePanelSessionBindings:
-                        changes.geminiSidePanelSessionBindings.newValue || {},
-                };
-                this.postCurrentTabContext();
+            if (areaName === 'session') {
+                if (changes.geminiSidePanelSessionBindings || changes.geminiSidePanelInputDrafts) {
+                    this.sessionStorageData = {
+                        ...(this.sessionStorageData || {}),
+                        geminiSidePanelSessionBindings:
+                            changes.geminiSidePanelSessionBindings?.newValue ||
+                            this.sessionStorageData?.geminiSidePanelSessionBindings ||
+                            {},
+                        geminiSidePanelInputDrafts: normalizeSidePanelInputDrafts(
+                            changes.geminiSidePanelInputDrafts?.newValue ||
+                                this.sessionStorageData?.geminiSidePanelInputDrafts
+                        ),
+                    };
+                    if (changes.geminiSidePanelSessionBindings) this.postCurrentTabContext();
+                }
                 return;
             }
 
@@ -415,6 +438,15 @@ export class StateManager {
         return this.sessionStorageData?.geminiSidePanelSessionBindings || {};
     }
 
+    getInputDraft(tabId, sessionId) {
+        const key = getSidePanelInputDraftKey(tabId, sessionId);
+        if (!key) return '';
+        const drafts = normalizeSidePanelInputDrafts(
+            this.sessionStorageData?.geminiSidePanelInputDrafts
+        );
+        return typeof drafts[key] === 'string' ? drafts[key] : '';
+    }
+
     postTabContextMessage(tab = null) {
         if (!this.hasInitialized) return;
         if (!this.frame.getWindow()) return;
@@ -424,12 +456,14 @@ export class StateManager {
             ? sessionBindings[this.currentTabId] || null
             : null;
         const tabMatchesCurrent = tab && tab.id === this.currentTabId;
+        const draft = this.getInputDraft(this.currentTabId, boundSessionId);
 
         this.frame.postMessage({
             action: 'RESTORE_SIDE_PANEL_TAB_CONTEXT',
             payload: {
                 tabId: this.currentTabId,
                 sessionId: boundSessionId,
+                draft,
                 url: tabMatchesCurrent ? tab.url || '' : '',
                 title: tabMatchesCurrent ? tab.title || '' : '',
             },

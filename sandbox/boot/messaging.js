@@ -123,6 +123,12 @@ export class AppMessageBridge {
             }
             return;
         }
+        if (action === 'VISIBILITY_CHANGED') {
+            if (typeof this.app.handleVisibilityChange === 'function') {
+                this.app.handleVisibilityChange(payload);
+            }
+            return;
+        }
 
         this.app.handleIncomingMessage(event);
     }

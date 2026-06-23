@@ -36,6 +36,14 @@ export class FrameManager {
         if (this.skeleton) this.skeleton.classList.add('hidden');
     }
 
+    ensureVisible() {
+        // Ensure iframe is visible (useful after tab switch restoration)
+        if (this.iframe) {
+            this.iframe.style.display = '';
+            this.iframe.style.visibility = 'visible';
+        }
+    }
+
     postMessage(message) {
         if (this.iframe.contentWindow) {
             this.iframe.contentWindow.postMessage(message, '*');

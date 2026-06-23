@@ -8,8 +8,23 @@ export function getRuntimeLastError() {
     return message ? new Error(message) : null;
 }
 
+const INPUT_DRAFTS_KEY = 'geminiSidePanelInputDrafts';
+
 function logSessionBindingWriteError(error) {
     console.warn('Unable to save side panel session binding after storage write failed:', error);
+}
+
+function logInputDraftWriteError(error) {
+    console.warn('Unable to save side panel input draft after storage write failed:', error);
+}
+
+export function getSidePanelInputDraftKey(tabId, sessionId = null) {
+    if (!Number.isInteger(tabId) || tabId <= 0) return null;
+    return sessionId ? `tab:${tabId}|session:${sessionId}` : `tab:${tabId}|draft`;
+}
+
+export function normalizeSidePanelInputDrafts(value) {
+    return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
 }
 
 export function restoreConnectionSettings(frame) {
@@ -45,6 +60,36 @@ export function restoreSidebarExpanded(frame) {
             action: 'RESTORE_SIDEBAR_EXPANDED',
             payload: result.geminiSidebarExpanded !== false,
         });
+    });
+}
+
+export function saveSidePanelInputDraft(payload) {
+    const tabId = payload?.tabId;
+    const sessionId = payload?.sessionId || null;
+    const key = getSidePanelInputDraftKey(tabId, sessionId);
+    if (!key) return;
+
+    chrome.storage.session.get([INPUT_DRAFTS_KEY], (result) => {
+        const readError = getRuntimeLastError();
+        if (readError) {
+            console.warn('Unable to save side panel input draft after storage read failed:', readError);
+            return;
+        }
+
+        const drafts = { ...normalizeSidePanelInputDrafts(result?.[INPUT_DRAFTS_KEY]) };
+        const value = typeof payload?.value === 'string' ? payload.value : '';
+        if (value) {
+            drafts[key] = value;
+        } else {
+            delete drafts[key];
+        }
+
+        try {
+            const writeResult = chrome.storage.session.set({ [INPUT_DRAFTS_KEY]: drafts });
+            writeResult?.catch?.(logInputDraftWriteError);
+        } catch (error) {
+            logInputDraftWriteError(error);
+        }
     });
 }
 

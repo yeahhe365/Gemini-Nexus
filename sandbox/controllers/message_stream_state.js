@@ -162,14 +162,17 @@ export function resetStream(handler, options = {}) {
 }
 
 export function clearActiveStream(handler) {
-    const activeSessionId =
-        handler.app.generatingSessionId || handler.sessionManager.currentSessionId || null;
+    const activeSessionId = handler.sessionManager.currentSessionId || null;
     handler.clearStreamState(activeSessionId);
     handler.resetStream({ remove: true });
 }
 
 export function restoreStreamForSession(handler, sessionId, hasPersistedAiReply) {
-    if (!sessionId || sessionId !== handler.app.generatingSessionId) return;
+    const isGenerating =
+        typeof handler.app.isSessionGenerating === 'function'
+            ? handler.app.isSessionGenerating(sessionId)
+            : handler.app.isGenerating === true && handler.app.generatingSessionId === sessionId;
+    if (!sessionId || !isGenerating) return;
     const state = handler.streamState.get(sessionId);
     if (!state) return;
     const session = handler.sessionManager.getCurrentSession();

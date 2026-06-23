@@ -22,6 +22,7 @@ export class AppController {
         this.imageManager = imageManager;
 
         this.captureMode = 'snip';
+        this.generatingSessions = new Map();
         this.isGenerating = false;
         this.generatingSessionId = null;
         this.pageContextActive = false;
@@ -34,6 +35,8 @@ export class AppController {
         this.boundSessionId = null;
         this.hostIsTab = false;
         this.sessionsRestored = false;
+        this.inputDrafts = new Map();
+        this.isVisible = true;
 
         // Sidebar Restore Behavior: 'auto', 'restore', 'new'
         this.sidebarRestoreBehavior = 'auto';
@@ -43,8 +46,10 @@ export class AppController {
         this.sessionFlow = new SessionFlowController(sessionManager, uiController, this);
         this.prompt = new PromptController(sessionManager, uiController, imageManager, this);
 
+        this.ui.inputFn?.addEventListener?.('input', () => this.saveCurrentInputDraft());
+
         document.addEventListener('gemini-provider-changed', () => {
-            if (!this.isGenerating) this.rerender();
+            if (!this.isCurrentSessionGenerating()) this.rerender();
         });
 
         if (this.ui.setBrowserControlCallbacks) {
@@ -57,6 +62,48 @@ export class AppController {
 
     setCaptureMode(mode) {
         this.captureMode = mode;
+    }
+
+    syncLegacyGenerationState() {
+        const generatingSessionIds = this.getGeneratingSessionIds();
+        this.isGenerating = generatingSessionIds.length > 0;
+        this.generatingSessionId = generatingSessionIds[0] || null;
+    }
+
+    startSessionGeneration(sessionId, metadata = {}) {
+        if (!sessionId) return;
+        this.generatingSessions.set(sessionId, {
+            sessionId,
+            startedAt: Date.now(),
+            ...metadata,
+        });
+        this.syncLegacyGenerationState();
+    }
+
+    finishSessionGeneration(sessionId) {
+        if (!sessionId) return;
+        this.generatingSessions.delete(sessionId);
+        this.syncLegacyGenerationState();
+    }
+
+    cancelSessionGeneration(sessionId) {
+        this.finishSessionGeneration(sessionId);
+    }
+
+    isSessionGenerating(sessionId) {
+        return !!sessionId && this.generatingSessions.has(sessionId);
+    }
+
+    hasActiveGenerations() {
+        return this.generatingSessions.size > 0;
+    }
+
+    getGeneratingSessionIds() {
+        return Array.from(this.generatingSessions.keys());
+    }
+
+    isCurrentSessionGenerating() {
+        return this.isSessionGenerating(this.sessionManager.currentSessionId);
     }
 
     togglePageContext() {
@@ -156,7 +203,34 @@ export class AppController {
         this.hostIsTab = context.isTab === true;
     }
 
+    handleVisibilityChange(payload) {
+        const visible = payload?.visible === true;
+        this.isVisible = visible;
+
+        if (visible) {
+            console.log('[Gemini Nexus] Sandbox became visible, resuming');
+            // When becoming visible, ensure the UI is properly displayed
+            // The streaming state is preserved, so ongoing streams will continue
+        } else {
+            this.saveCurrentInputDraft();
+            console.log('[Gemini Nexus] Sandbox became hidden (tab switched away)');
+            // When hidden, we keep the state but don't need to do anything special
+            // Fetch streams will continue in the background
+        }
+    }
+
     handleModelChange(model) {
+        // Save model to current session if exists
+        const currentSessionId = this.sessionManager.currentSessionId;
+        if (currentSessionId) {
+            this.sessionManager.setSessionModel(currentSessionId, model);
+            saveSessionsToStorage(this.sessionManager.getPersistableSessions(), {
+                type: 'updateSessionMetadata',
+                sessionId: currentSessionId,
+                fields: ['model'],
+            });
+        }
+
         const connectionData = this.ui.settings?.connectionData;
         const provider =
             connectionData?.provider ||
@@ -268,6 +342,67 @@ export class AppController {
         );
     }
 
+    getInputDraftKey(tabId = this.currentTabId, sessionId = this.sessionManager.currentSessionId) {
+        if (!Number.isInteger(tabId) || tabId <= 0) return null;
+        return sessionId ? `tab:${tabId}|session:${sessionId}` : `tab:${tabId}|draft`;
+    }
+
+    postInputDraftToHost(tabId, sessionId, value) {
+        if (!Number.isInteger(tabId) || tabId <= 0) return;
+        window.parent.postMessage(
+            {
+                action: 'SAVE_SIDE_PANEL_INPUT_DRAFT',
+                payload: {
+                    tabId,
+                    sessionId: sessionId || null,
+                    value,
+                },
+            },
+            '*'
+        );
+    }
+
+    saveInputDraftForContext(tabId, sessionId, value) {
+        const key = this.getInputDraftKey(tabId, sessionId);
+        if (!key) return;
+
+        if (value) {
+            this.inputDrafts.set(key, value);
+        } else {
+            this.inputDrafts.delete(key);
+        }
+        this.postInputDraftToHost(tabId, sessionId, value);
+    }
+
+    saveCurrentInputDraft() {
+        const value = this.ui.getInputValue?.() ?? this.ui.inputFn?.value ?? '';
+        this.saveInputDraftForContext(this.currentTabId, this.sessionManager.currentSessionId, value);
+    }
+
+    restoreCurrentInputDraft() {
+        const key = this.getInputDraftKey();
+        if (!key) return;
+
+        const value = this.inputDrafts.get(key) || '';
+        if (this.ui.setInputValue) {
+            this.ui.setInputValue(value);
+        } else if (this.ui.inputFn) {
+            this.ui.inputFn.value = value;
+        }
+    }
+
+    clearInputDraftForContext(tabId = this.currentTabId, sessionId = this.sessionManager.currentSessionId) {
+        const key = this.getInputDraftKey(tabId, sessionId);
+        if (key) this.inputDrafts.delete(key);
+        this.postInputDraftToHost(tabId, sessionId, '');
+    }
+
+    clearComposerDraftAfterSend(previousSessionId, currentSessionId) {
+        const tabId = this.currentTabId;
+        this.clearInputDraftForContext(tabId, previousSessionId);
+        this.clearInputDraftForContext(tabId, currentSessionId);
+    }
+
     getBoundSession() {
         return this.boundSessionId ? this.sessionManager.getSessionById(this.boundSessionId) : null;
     }
@@ -326,15 +461,24 @@ export class AppController {
             return;
         }
         if (action === 'RESTORE_SIDE_PANEL_TAB_CONTEXT') {
+            this.saveCurrentInputDraft();
+
             this.currentTabId = payload?.tabId || null;
             this.currentTabUrl = payload?.url || '';
             this.currentTabTitle = payload?.title || '';
             this.boundSessionId = payload?.sessionId || null;
+            const draftKey = this.getInputDraftKey(this.currentTabId, this.boundSessionId);
+            if (draftKey) {
+                const draft = typeof payload?.draft === 'string' ? payload.draft : '';
+                if (draft) this.inputDrafts.set(draftKey, draft);
+                else this.inputDrafts.delete(draftKey);
+            }
             this.ui.setPageContextAvailable?.(
                 Number.isInteger(this.currentTabId) && this.currentTabId > 0
             );
             if (this.sessionsRestored && this.sidePanelScope === DEFAULT_SIDE_PANEL_SCOPE) {
                 this.restoreRememberedTabSession();
+                this.restoreCurrentInputDraft();
             }
             return;
         }
@@ -392,6 +536,7 @@ export class AppController {
 
                 if (this.sidePanelScope === DEFAULT_SIDE_PANEL_SCOPE) {
                     this.restoreRememberedTabSession();
+                    this.restoreCurrentInputDraft();
                 } else if (shouldRestore && sorted.length > 0) {
                     this.switchToSession(sorted[0].id);
                 } else {
@@ -423,7 +568,7 @@ export class AppController {
                     this.setBrowserControlActiveState(!payload.enabled);
                     this.ui.updateStatus(payload.error || 'Browser control could not be updated.');
                     setTimeout(() => {
-                        if (!this.isGenerating) this.ui.updateStatus('');
+                        if (!this.isCurrentSessionGenerating()) this.ui.updateStatus('');
                     }, 3000);
                 }
                 return;
@@ -431,7 +576,7 @@ export class AppController {
             if (payload.action === 'BACKGROUND_REQUEST_ERROR') {
                 this.ui.updateStatus(payload.error || 'Background request failed.');
                 setTimeout(() => {
-                    if (!this.isGenerating) this.ui.updateStatus('');
+                    if (!this.isCurrentSessionGenerating()) this.ui.updateStatus('');
                 }, 3000);
                 return;
             }
@@ -439,7 +584,7 @@ export class AppController {
                 if (payload.error) {
                     this.ui.updateStatus(payload.error);
                     setTimeout(() => {
-                        if (!this.isGenerating) this.ui.updateStatus('');
+                        if (!this.isCurrentSessionGenerating()) this.ui.updateStatus('');
                     }, 3000);
                     return;
                 }
@@ -467,7 +612,7 @@ export class AppController {
                 const statusMessage = t('pageReadSuccess').replace('{count}', formattedLength);
                 this.ui.updateStatus(statusMessage);
                 setTimeout(() => {
-                    if (!this.isGenerating) this.ui.updateStatus('');
+                    if (!this.isCurrentSessionGenerating()) this.ui.updateStatus('');
                 }, 3000);
                 return;
             }

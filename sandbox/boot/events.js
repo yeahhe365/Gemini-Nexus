@@ -13,7 +13,10 @@ export function bindAppEvents(app, ui, setResizeRef) {
     ['new-chat-sidebar-btn', 'collapsed-new-chat-btn'].forEach((buttonId) => {
         const newChatSidebarBtn = document.getElementById(buttonId);
         if (newChatSidebarBtn) {
-            newChatSidebarBtn.addEventListener('click', () => app.handleNewChat());
+            newChatSidebarBtn.addEventListener('click', () => {
+                app.handleNewChat();
+                ui.sidebar.close();
+            });
         }
     });
 

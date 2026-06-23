@@ -90,7 +90,7 @@ describe('SessionFlowController', () => {
         expect(sessionManager.currentSessionId).toBeNull();
         expect(app.boundSessionId).toBeNull();
         expect(app.saveCurrentTabSessionBinding).toHaveBeenCalledWith(null);
-        expect(sendToBackground).toHaveBeenCalledWith({ action: 'RESET_CONTEXT' });
+        expect(sendToBackground).not.toHaveBeenCalledWith({ action: 'RESET_CONTEXT' });
         expect(ui.clearChatHistory).toHaveBeenCalled();
         expect(ui.resetInput).toHaveBeenCalled();
         expect(ui.renderHistoryList).toHaveBeenCalledWith(
@@ -101,7 +101,7 @@ describe('SessionFlowController', () => {
                 onSwitch: expect.any(Function),
                 onDelete: expect.any(Function),
             }),
-            { isGenerating: false, generatingSessionId: null }
+            { isGenerating: false, generatingSessionId: null, generatingSessionIds: [] }
         );
     });
 
@@ -144,11 +144,9 @@ describe('SessionFlowController', () => {
         );
         expect(app.boundSessionId).toBe('session-1');
         expect(app.saveCurrentTabSessionBinding).toHaveBeenCalledWith('session-1');
-        expect(sendToBackground).toHaveBeenCalledWith({
-            action: 'SET_CONTEXT',
-            context: ['conversation', 'response', 'choice'],
-            model: 'gemini-test',
-        });
+        expect(sendToBackground).not.toHaveBeenCalledWith(
+            expect.objectContaining({ action: 'SET_CONTEXT' })
+        );
         expect(ui.scrollToBottom).toHaveBeenCalled();
         expect(ui.resetInput).toHaveBeenCalled();
     });
@@ -284,7 +282,7 @@ describe('SessionFlowController', () => {
         expect(sessionManager.sessions).toEqual([]);
         expect(sessionManager.currentSessionId).toBeNull();
         expect(app.saveCurrentTabSessionBinding).toHaveBeenCalledWith(null);
-        expect(sendToBackground).toHaveBeenCalledWith({ action: 'RESET_CONTEXT' });
+        expect(sendToBackground).not.toHaveBeenCalledWith({ action: 'RESET_CONTEXT' });
         expect(ui.clearChatHistory).toHaveBeenCalled();
     });
 
@@ -420,7 +418,7 @@ describe('SessionFlowController', () => {
                 onDeleteGroup: expect.any(Function),
                 onMoveSessionToGroup: expect.any(Function),
             }),
-            { isGenerating: false, generatingSessionId: null }
+            { isGenerating: false, generatingSessionId: null, generatingSessionIds: [] }
         );
     });
 

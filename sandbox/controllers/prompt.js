@@ -13,11 +13,14 @@ export class PromptController {
         this.ui = uiController;
         this.imageManager = imageManager;
         this.app = appController;
-        this.cancellationTimestamp = 0;
+        this.cancellationTimestamp = new Map();
     }
 
     buildRequestPayload(text, files, sessionId, extra = {}) {
-        const selectedModel = this.app.getSelectedModel();
+        // Use session's model if available, otherwise use selected model
+        const session = this.sessionManager.getSessionById(sessionId);
+        const selectedModel = session?.model || this.app.getSelectedModel();
+
         const conn = this.getConnectionData();
         const liveArtifactsInstruction =
             this.app.liveArtifactsEnabled === true
@@ -113,10 +116,35 @@ export class PromptController {
         };
     }
 
-    setGeneratingState(isGenerating, sessionId = null) {
-        this.app.isGenerating = isGenerating;
-        this.app.generatingSessionId = isGenerating ? sessionId : null;
-        this.ui.setLoading(isGenerating);
+    isSessionGenerating(sessionId) {
+        if (typeof this.app.isSessionGenerating === 'function') {
+            return this.app.isSessionGenerating(sessionId);
+        }
+        return this.app.isGenerating === true && this.app.generatingSessionId === sessionId;
+    }
+
+    isCurrentSessionGenerating() {
+        if (typeof this.app.isCurrentSessionGenerating === 'function') {
+            return this.app.isCurrentSessionGenerating();
+        }
+        return this.isSessionGenerating(this.sessionManager.currentSessionId);
+    }
+
+    setGeneratingState(isGenerating, sessionId = null, metadata = {}) {
+        if (isGenerating) {
+            if (typeof this.app.startSessionGeneration === 'function') {
+                this.app.startSessionGeneration(sessionId, metadata);
+            } else {
+                this.app.isGenerating = true;
+                this.app.generatingSessionId = sessionId;
+            }
+        } else if (typeof this.app.finishSessionGeneration === 'function') {
+            this.app.finishSessionGeneration(sessionId);
+        } else if (this.app.generatingSessionId === sessionId) {
+            this.app.isGenerating = false;
+            this.app.generatingSessionId = null;
+        }
+        this.ui.setLoading(this.isCurrentSessionGenerating());
         this.app.sessionFlow.refreshHistoryUI();
     }
 
@@ -140,17 +168,25 @@ export class PromptController {
     }
 
     async sendPromptText(text, files = []) {
-        if (this.app.isGenerating) return;
-
         if (!text && files.length === 0) return;
 
+        const previousSessionId = this.sessionManager.currentSessionId;
         if (!this.sessionManager.currentSessionId) {
-            this.sessionManager.createSession();
+            // Create session with current model
+            const currentModel = this.app.getSelectedModel();
+            this.sessionManager.createSession(currentModel);
         }
 
         const currentId = this.sessionManager.currentSessionId;
         const session = this.sessionManager.getCurrentSession();
-        if (!session) return;
+        if (!session || this.isSessionGenerating(currentId)) return;
+
+        // Save current model to session if not set yet
+        if (!session.model) {
+            const currentModel = this.app.getSelectedModel();
+            this.sessionManager.setSessionModel(currentId, currentModel);
+        }
+        const requestModel = session.model || this.app.getSelectedModel();
 
         if (session.messages.length === 0) {
             const titleUpdate = this.sessionManager.updateTitle(currentId, text || t('imageSent'));
@@ -177,27 +213,26 @@ export class PromptController {
             type: 'upsertSession',
             sessionId: currentId,
         });
+        this.app.clearComposerDraftAfterSend?.(previousSessionId, currentId);
         this.app.sessionFlow.switchToSession(currentId);
 
         if (session.context) {
             sendToBackground({
                 action: 'SET_CONTEXT',
                 context: session.context,
-                model: this.app.getSelectedModel(),
+                model: requestModel,
             });
         }
 
         this.ui.resetInput();
         this.imageManager.clearFile();
 
-        this.setGeneratingState(true, currentId);
+        this.setGeneratingState(true, currentId, { model: requestModel });
 
         sendToBackground(this.buildRequestPayload(text, files, currentId));
     }
 
     async send() {
-        if (this.app.isGenerating) return;
-
         const text = this.ui.inputFn.value.trim();
         const files = this.imageManager.getFiles();
 
@@ -210,16 +245,16 @@ export class PromptController {
     }
 
     async resendFromMessage(messageIndex, editedText) {
-        if (this.app.isGenerating) return false;
+        const currentId = this.sessionManager.currentSessionId;
+        if (this.isSessionGenerating(currentId)) return false;
         if (!this.canEditHistory()) {
             this.ui.updateStatus(t('editNotSupportedForWeb'));
             setTimeout(() => {
-                if (!this.app.isGenerating) this.ui.updateStatus('');
+                if (!this.isCurrentSessionGenerating()) this.ui.updateStatus('');
             }, 3000);
             return false;
         }
 
-        const currentId = this.sessionManager.currentSessionId;
         const session = this.sessionManager.getCurrentSession();
         if (!session || !Array.isArray(session.messages)) return false;
 
@@ -246,7 +281,9 @@ export class PromptController {
 
         this.imageManager.clearFile();
         this.ui.resetInput();
-        this.setGeneratingState(true, currentId);
+        const requestModel = session.model || this.app.getSelectedModel();
+        if (!session.model) this.sessionManager.setSessionModel(currentId, requestModel);
+        this.setGeneratingState(true, currentId, { model: requestModel });
 
         sendToBackground(
             this.buildRequestPayload(nextText, files, currentId, {
@@ -259,21 +296,29 @@ export class PromptController {
     }
 
     cancel() {
-        if (!this.app.isGenerating) return;
+        const currentId = this.sessionManager.currentSessionId;
+        if (!this.isSessionGenerating(currentId)) return;
 
-        this.cancellationTimestamp = Date.now();
+        this.cancellationTimestamp.set(currentId, Date.now());
 
-        sendToBackground({ action: 'CANCEL_PROMPT' });
+        sendToBackground({ action: 'CANCEL_PROMPT', sessionId: currentId });
         this.app.messageHandler.clearActiveStream();
 
-        this.app.isGenerating = false;
-        this.app.generatingSessionId = null;
-        this.ui.setLoading(false);
+        this.app.cancelSessionGeneration(currentId);
+        this.ui.setLoading(this.isCurrentSessionGenerating());
         this.app.sessionFlow.refreshHistoryUI();
         this.ui.updateStatus(t('cancelled'));
+
+        // Clear the cancelled status after a delay to ensure UI is fully recoverable
+        setTimeout(() => {
+            if (!this.isCurrentSessionGenerating()) {
+                this.ui.updateStatus('');
+            }
+        }, 3000);
     }
 
-    isCancellationRecent() {
-        return Date.now() - this.cancellationTimestamp < 2000; // 2s window
+    isCancellationRecent(sessionId = null) {
+        const timestamp = this.cancellationTimestamp.get(sessionId) || 0;
+        return Date.now() - timestamp < 2000; // 2s window
     }
 }

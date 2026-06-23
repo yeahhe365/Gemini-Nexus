@@ -11,7 +11,7 @@ export class SessionManager {
         this.currentSessionId = null;
     }
 
-    createSession() {
+    createSession(initialModel = null) {
         const newId = generateUUID();
         const newSession = {
             id: newId,
@@ -19,6 +19,7 @@ export class SessionManager {
             timestamp: Date.now(),
             messages: [],
             context: null, // Gemini context IDs
+            model: initialModel, // Store model per session
         };
         this.sessions.unshift(newSession);
         this.currentSessionId = newId;
@@ -283,5 +284,17 @@ export class SessionManager {
         if (session) {
             session.context = context;
         }
+    }
+
+    setSessionModel(id, model) {
+        const session = this.getSessionById(id);
+        if (session) {
+            session.model = model;
+        }
+    }
+
+    getSessionModel(id) {
+        const session = this.getSessionById(id);
+        return session?.model || null;
     }
 }

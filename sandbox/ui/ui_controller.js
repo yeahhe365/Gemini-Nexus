@@ -134,6 +134,12 @@ export class UIController {
     scrollToBottom(options) {
         this.chat.scrollToBottom(options);
     }
+    getInputValue() {
+        return this.chat.getInputValue();
+    }
+    setInputValue(value, options) {
+        this.chat.setInputValue(value, options);
+    }
     resetInput() {
         this.chat.resetInput();
     }

@@ -33,15 +33,52 @@ function createController() {
         historyDiv.scrollTop = top;
     });
 
+    const inputFn = document.createElement('textarea');
     const controller = new ChatController({
         historyDiv,
-        inputFn: document.createElement('textarea'),
+        inputFn,
         sendBtn: document.createElement('button'),
         statusDiv: document.createElement('div'),
     });
 
-    return { controller, historyDiv };
+    return { controller, historyDiv, inputFn };
 }
+
+describe('ChatController composer input', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        document.documentElement.style.removeProperty('--footer-height');
+        document.body.innerHTML = '<div class="footer"></div>';
+    });
+
+    it('sets the textarea value and refreshes composer layout', () => {
+        const footer = document.querySelector('.footer');
+        footer.getBoundingClientRect = vi.fn(() => ({ height: 42 }));
+        const { controller, inputFn } = createController();
+        Object.defineProperty(inputFn, 'scrollHeight', {
+            configurable: true,
+            value: 64,
+        });
+
+        controller.setInputValue('saved draft');
+
+        expect(controller.getInputValue()).toBe('saved draft');
+        expect(inputFn.style.height).toBe('64px');
+        expect(document.documentElement.style.getPropertyValue('--footer-height')).toBe('42px');
+    });
+
+    it('clears and focuses the textarea when reset', () => {
+        const { controller, inputFn } = createController();
+        inputFn.focus = vi.fn();
+        controller.setInputValue('saved draft');
+
+        controller.resetInput();
+
+        expect(inputFn.value).toBe('');
+        expect(inputFn.style.height).toBe('auto');
+        expect(inputFn.focus).toHaveBeenCalled();
+    });
+});
 
 describe('ChatController footer spacing', () => {
     beforeEach(() => {

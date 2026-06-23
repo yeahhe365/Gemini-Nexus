@@ -142,6 +142,9 @@ const WINDOW_MESSAGE_HANDLERS = {
     SAVE_SIDE_PANEL_SESSION_BINDING(payload, bridge) {
         bridge.saveSidePanelSessionBinding(payload);
     },
+    SAVE_SIDE_PANEL_INPUT_DRAFT(payload, bridge) {
+        bridge.saveSidePanelInputDraft(payload);
+    },
     SAVE_ACCOUNT_INDICES(payload, bridge) {
         bridge.state.save('geminiAccountIndices', payload);
     },

@@ -108,9 +108,18 @@ export class MessageHandler {
     }
 
     isGeneratingSessionMessage(request) {
-        const generatingSessionId = this.app.generatingSessionId || null;
         const messageSessionId = request.sessionId || null;
-        return generatingSessionId !== null && messageSessionId === generatingSessionId;
+        if (typeof this.app.isSessionGenerating === 'function') {
+            return this.app.isSessionGenerating(messageSessionId);
+        }
+        return this.app.isGenerating === true && this.app.generatingSessionId === messageSessionId;
+    }
+
+    isCurrentSessionGenerating() {
+        if (typeof this.app.isCurrentSessionGenerating === 'function') {
+            return this.app.isCurrentSessionGenerating();
+        }
+        return this.isGeneratingSessionMessage({ sessionId: this.sessionManager.currentSessionId });
     }
 
     hasPersistedAiReply(session, request) {
@@ -134,28 +143,31 @@ export class MessageHandler {
     }
 
     handleStreamUpdate(request) {
+        const sessionId = this.getRequestSessionId(request);
         if (!this.isGeneratingSessionMessage(request)) return;
-        const state = this.streamState.cache(request);
-        const displayText = state?.text || '';
 
         // Prevent race condition: Ignore stream updates arriving shortly after user cancelled
-        if (this.app.prompt.isCancellationRecent()) {
-            this.clearStreamState(this.getRequestSessionId(request));
+        if (this.app.prompt.isCancellationRecent(sessionId)) {
+            this.clearStreamState(sessionId);
             return;
         }
 
-        if (!this.isCurrentSessionMessage(request)) return;
+        const state = this.streamState.cache(request);
+        const displayText = state?.text || '';
+
+        if (!this.isCurrentSessionMessage(request)) {
+            // Keep background session streams cached without re-rendering the sidebar on
+            // every token. Rebuilding the history list during hover/click makes the
+            // generating row flicker and can prevent selecting that session.
+            return;
+        }
 
         if (!this.streamingBubble) {
             createStreamingBubbleHelper(this, state);
         }
 
         this.streamingBubble.update(displayText, request.thoughts, { isStreaming: true });
-
-        if (!this.app.isGenerating) {
-            this.app.isGenerating = true;
-            this.ui.setLoading(true);
-        }
+        this.ui.setLoading(this.isCurrentSessionGenerating());
     }
 
     handleContextStatus(request) {
@@ -194,21 +206,45 @@ export class MessageHandler {
     }
 
     handleGeminiReply(request) {
-        if (!this.isGeneratingSessionMessage(request)) return;
-
-        this.app.isGenerating = false;
-        this.app.generatingSessionId = null;
-        this.ui.setLoading(false);
+        const sessionId = this.getRequestSessionId(request);
+        const wasGenerating = this.isGeneratingSessionMessage(request);
+        if (wasGenerating) {
+            if (typeof this.app.finishSessionGeneration === 'function') {
+                this.app.finishSessionGeneration(sessionId);
+            } else if (this.app.generatingSessionId === sessionId) {
+                this.app.isGenerating = false;
+                this.app.generatingSessionId = null;
+            }
+        }
+        this.clearStreamState(sessionId);
+        this.ui.setLoading(this.isCurrentSessionGenerating());
         this.app.sessionFlow.refreshHistoryUI();
-        this.clearStreamState(this.getRequestSessionId(request));
 
+        // Background session completion: keep the current visible stream untouched.
         if (!this.isCurrentSessionMessage(request)) {
-            this.resetStream();
+            const targetSession = this.sessionManager.getSessionById(sessionId);
+            if (targetSession && request.status === 'success') {
+                this.sessionManager.updateContext(sessionId, request.context);
+            }
             return;
         }
 
+        // Current session: render the reply normally
         const session = this.sessionManager.getCurrentSession();
         renderGeminiReply(this, session, request);
+
+        // Recovery: If this was a cancellation or error, ensure UI is in a fully recoverable state
+        // Clear any lingering status messages and double-check the UI state after a delay
+        if (request.status === 'cancelled' || request.status === 'error') {
+            setTimeout(() => {
+                // Only clear if no new generation has started in the current session
+                if (!this.isCurrentSessionGenerating()) {
+                    this.ui.updateStatus('');
+                    // Double-check that loading state is cleared (safety measure)
+                    this.ui.setLoading(false);
+                }
+            }, 3000);
+        }
     }
 
     handleToolOutputMessage(request) {

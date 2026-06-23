@@ -3,7 +3,6 @@ import { appendContextCompressionNotice } from '../render/context_compression.js
 import { copyToClipboard } from '../render/clipboard.js';
 import {
     downloadTextFile,
-    sendToBackground,
     saveGroupsToStorage,
     saveSessionsToStorage,
 } from '../../shared/messaging/index.js';
@@ -22,6 +21,27 @@ export class SessionFlowController {
         this.app = appController;
     }
 
+    isSessionGenerating(sessionId) {
+        if (typeof this.app.isSessionGenerating === 'function') {
+            return this.app.isSessionGenerating(sessionId);
+        }
+        return this.app.isGenerating === true && this.app.generatingSessionId === sessionId;
+    }
+
+    hasActiveGenerations() {
+        if (typeof this.app.hasActiveGenerations === 'function') {
+            return this.app.hasActiveGenerations();
+        }
+        return this.app.isGenerating === true;
+    }
+
+    getGeneratingSessionIds() {
+        if (typeof this.app.getGeneratingSessionIds === 'function') {
+            return this.app.getGeneratingSessionIds();
+        }
+        return this.app.generatingSessionId ? [this.app.generatingSessionId] : [];
+    }
+
     handleNewChat() {
         this.enterDraft();
     }
@@ -31,18 +51,29 @@ export class SessionFlowController {
         this.sessionManager.enterDraft();
         this.app.boundSessionId = null;
         this.app.saveCurrentTabSessionBinding(null);
-        sendToBackground({ action: 'RESET_CONTEXT' });
         this.ui.clearChatHistory();
         this.ui.resetInput();
+        this.ui.setLoading?.(false);
         this.refreshHistoryUI();
     }
 
     switchToSession(sessionId, options = {}) {
         this.app.messageHandler.resetStream();
+
         this.sessionManager.setCurrentId(sessionId);
 
         const session = this.sessionManager.getCurrentSession();
         if (!session) return;
+
+        // Restore session's model if it has one
+        if (session.model && this.ui.modelSelect) {
+            const currentModel = this.ui.modelSelect.value;
+            if (currentModel !== session.model) {
+                this.ui.modelSelect.value = session.model;
+                this.ui.resizeModelSelect?.();
+                this.ui.updateWebThinkingToggle?.(this.ui.settings?.connectionData);
+            }
+        }
 
         this.ui.clearChatHistory();
         const compressionNoticeIndex = this.getCompressionNoticeIndex(session);
@@ -89,6 +120,7 @@ export class SessionFlowController {
             this.appendRestoredCompressionNotice();
         }
         this.app.messageHandler.restoreStreamForSession(sessionId);
+        this.ui.setLoading?.(this.isSessionGenerating(sessionId));
         if (options.restoreScrollState && this.ui.restoreChatScrollState) {
             this.ui.restoreChatScrollState(options.restoreScrollState);
         } else {
@@ -97,16 +129,6 @@ export class SessionFlowController {
 
         this.app.boundSessionId = sessionId;
         this.app.saveCurrentTabSessionBinding(sessionId);
-
-        if (session.context) {
-            sendToBackground({
-                action: 'SET_CONTEXT',
-                context: session.context,
-                model: this.app.getSelectedModel(),
-            });
-        } else {
-            sendToBackground({ action: 'RESET_CONTEXT' });
-        }
 
         this.refreshHistoryUI();
         this.ui.resetInput();
@@ -133,8 +155,9 @@ export class SessionFlowController {
                 onToggleGroupExpansion: (id) => this.handleToggleGroupExpansion(id),
             },
             {
-                isGenerating: this.app.isGenerating,
+                isGenerating: this.hasActiveGenerations(),
                 generatingSessionId: this.app.generatingSessionId,
+                generatingSessionIds: this.getGeneratingSessionIds(),
             }
         );
     }

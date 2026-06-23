@@ -48,6 +48,7 @@ function createPromptHarness({ text = 'Hello', files = [], liveArtifactsEnabled 
             refreshHistoryUI: vi.fn(),
             switchToSession: vi.fn(),
         },
+        clearComposerDraftAfterSend: vi.fn(),
     };
 
     const controller = new PromptController(sessionManager, ui, imageManager, app);
@@ -82,6 +83,7 @@ describe('PromptController.send', () => {
             type: 'upsertSession',
             sessionId: session.id,
         });
+        expect(app.clearComposerDraftAfterSend).toHaveBeenCalledWith(null, session.id);
         expect(app.sessionFlow.switchToSession).toHaveBeenCalledWith(session.id);
         expect(app.isGenerating).toBe(true);
         expect(app.generatingSessionId).toBe(session.id);
@@ -95,11 +97,12 @@ describe('PromptController.send', () => {
     });
 
     it('does not create a session for an empty draft send', async () => {
-        const { controller, sessionManager } = createPromptHarness({ text: '   ' });
+        const { app, controller, sessionManager } = createPromptHarness({ text: '   ' });
 
         await controller.send();
 
         expect(sessionManager.sessions).toEqual([]);
+        expect(app.clearComposerDraftAfterSend).not.toHaveBeenCalled();
         expect(saveSessionsToStorage).not.toHaveBeenCalled();
         expect(sendToBackground).not.toHaveBeenCalled();
     });

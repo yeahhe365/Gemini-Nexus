@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Gemini Nexus UI</title>
+
+        <!-- CRITICAL: Apply Theme & Lang Immediately from URL before Rendering -->
+        <script>
+            (function () {
+                try {
+                    const params = new URLSearchParams(window.location.search);
+                    const theme = params.get('theme');
+                    const lang = params.get('lang');
+
+                    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    if (theme === 'dark' || (theme === 'system' && systemDark)) {
+                        document.documentElement.setAttribute('data-theme', 'dark');
+                    }
+
+                    if (lang && lang !== 'system') {
+                        document.documentElement.lang = lang;
+                    } else if (!lang || lang === 'system') {
+                        if (navigator.language.startsWith('zh')) {
+                            document.documentElement.lang = 'zh';
+                        }
+                    }
+                } catch {}
+            })();
+        </script>
+
+        <!-- Local CSS (Parallel Loading) -->
+        <!-- Sandbox page styles -->
+
+        <!-- Dependencies are now Lazy Loaded in sandbox/index.js to speed up First Paint -->
+      <script type="module" crossorigin src="/assets/sandbox-Dg-2sjcp.js"></script>
+      <link rel="modulepreload" crossorigin href="/assets/web_model_catalog-DvsY_dA9.js">
+      <link rel="modulepreload" crossorigin href="/assets/index-BGDtEr7y.js">
+      <link rel="stylesheet" crossorigin href="/assets/index-BRCgbRoS.css">
+      <link rel="stylesheet" crossorigin href="/assets/sandbox-B63iLv0X.css">
+    </head>
+    <body>
+        <div id="app"></div>
+    </body>
+</html>

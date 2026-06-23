@@ -39,7 +39,13 @@ function createUi() {
         inputFn,
         modelSelect: { value: 'gemini-test' },
         renderHistoryList: vi.fn(),
-        resetInput: vi.fn(),
+        getInputValue: vi.fn(() => inputFn.value),
+        setInputValue: vi.fn((value) => {
+            inputFn.value = value;
+        }),
+        resetInput: vi.fn(() => {
+            inputFn.value = '';
+        }),
         getChatScrollState: vi.fn(() => ({ scrollTop: 120, isNearBottom: false })),
         restoreChatScrollState: vi.fn(),
         scrollToBottom: vi.fn(),
@@ -178,6 +184,99 @@ describe('AppController session restore behavior', () => {
 
         expect(app.currentTabId).toBe(123);
         expect(sessionManager.currentSessionId).toBe('real');
+    });
+
+    it('restores unsent composer drafts when returning to a remembered browser tab', async () => {
+        const { app, sessionManager, ui } = createAppHarness();
+        app.sidePanelScope = 'remembered_tabs';
+
+        await app.handleIncomingMessage(
+            restoreEvent([
+                realSession({ id: 'session-1', title: 'Tab one' }),
+                realSession({ id: 'session-2', title: 'Tab two' }),
+            ])
+        );
+
+        await app.handleIncomingMessage({
+            data: {
+                action: 'RESTORE_SIDE_PANEL_TAB_CONTEXT',
+                payload: { tabId: 1, sessionId: 'session-1' },
+            },
+        });
+        ui.inputFn.value = 'draft for tab one\nsecond line';
+
+        await app.handleIncomingMessage({
+            data: {
+                action: 'RESTORE_SIDE_PANEL_TAB_CONTEXT',
+                payload: { tabId: 2, sessionId: 'session-2' },
+            },
+        });
+        expect(sessionManager.currentSessionId).toBe('session-2');
+        expect(ui.inputFn.value).toBe('');
+
+        ui.inputFn.value = 'draft for tab two';
+
+        await app.handleIncomingMessage({
+            data: {
+                action: 'RESTORE_SIDE_PANEL_TAB_CONTEXT',
+                payload: { tabId: 1, sessionId: 'session-1' },
+            },
+        });
+        expect(sessionManager.currentSessionId).toBe('session-1');
+        expect(ui.inputFn.value).toBe('draft for tab one\nsecond line');
+
+        await app.handleIncomingMessage({
+            data: {
+                action: 'RESTORE_SIDE_PANEL_TAB_CONTEXT',
+                payload: { tabId: 2, sessionId: 'session-2' },
+            },
+        });
+        expect(sessionManager.currentSessionId).toBe('session-2');
+        expect(ui.inputFn.value).toBe('draft for tab two');
+    });
+
+    it('removes a cached composer draft when the user clears the input', async () => {
+        const { app, ui } = createAppHarness();
+        app.sidePanelScope = 'remembered_tabs';
+
+        await app.handleIncomingMessage(restoreEvent([realSession({ id: 'session-1' })]));
+        await app.handleIncomingMessage({
+            data: {
+                action: 'RESTORE_SIDE_PANEL_TAB_CONTEXT',
+                payload: { tabId: 1, sessionId: 'session-1' },
+            },
+        });
+        ui.inputFn.value = 'temporary draft';
+
+        await app.handleIncomingMessage({
+            data: {
+                action: 'RESTORE_SIDE_PANEL_TAB_CONTEXT',
+                payload: { tabId: 2, sessionId: null },
+            },
+        });
+        await app.handleIncomingMessage({
+            data: {
+                action: 'RESTORE_SIDE_PANEL_TAB_CONTEXT',
+                payload: { tabId: 1, sessionId: 'session-1' },
+            },
+        });
+        expect(ui.inputFn.value).toBe('temporary draft');
+
+        ui.inputFn.value = '';
+        await app.handleIncomingMessage({
+            data: {
+                action: 'RESTORE_SIDE_PANEL_TAB_CONTEXT',
+                payload: { tabId: 2, sessionId: null },
+            },
+        });
+        await app.handleIncomingMessage({
+            data: {
+                action: 'RESTORE_SIDE_PANEL_TAB_CONTEXT',
+                payload: { tabId: 1, sessionId: 'session-1' },
+            },
+        });
+
+        expect(ui.inputFn.value).toBe('');
     });
 
     it('updates page-context availability from restored tab context', async () => {

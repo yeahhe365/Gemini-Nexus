@@ -158,6 +158,7 @@ describe('app events', () => {
         const ui = {
             inputFn: document.getElementById('prompt'),
             updateStatus: vi.fn(),
+            sidebar: { close: vi.fn() },
         };
 
         document.body.insertAdjacentHTML(
@@ -169,6 +170,7 @@ describe('app events', () => {
         document.getElementById('new-chat-sidebar-btn').click();
 
         expect(app.handleNewChat).toHaveBeenCalledTimes(1);
+        expect(ui.sidebar.close).toHaveBeenCalledTimes(1);
     });
 
     it('starts a new chat from the collapsed sidebar rail', () => {
@@ -185,6 +187,7 @@ describe('app events', () => {
         const ui = {
             inputFn: document.getElementById('prompt'),
             updateStatus: vi.fn(),
+            sidebar: { close: vi.fn() },
         };
 
         document.body.insertAdjacentHTML(
@@ -196,6 +199,7 @@ describe('app events', () => {
         document.getElementById('collapsed-new-chat-btn').click();
 
         expect(app.handleNewChat).toHaveBeenCalledTimes(1);
+        expect(ui.sidebar.close).toHaveBeenCalledTimes(1);
     });
 
     it('uses a page-sized distance for tools row navigation', () => {

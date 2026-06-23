@@ -19,6 +19,23 @@ describe('UIController browser control visibility', () => {
     });
 });
 
+describe('UIController composer input', () => {
+    it('delegates composer value helpers to the chat controller', () => {
+        const controller = Object.create(UIController.prototype);
+        controller.chat = {
+            getInputValue: vi.fn(() => 'saved draft'),
+            setInputValue: vi.fn(),
+        };
+
+        expect(controller.getInputValue()).toBe('saved draft');
+        controller.setInputValue('restored draft', { focus: true });
+
+        expect(controller.chat.setInputValue).toHaveBeenCalledWith('restored draft', {
+            focus: true,
+        });
+    });
+});
+
 describe('UIController host context', () => {
     it('marks tab-hosted sidepanel pages so tab-only controls can be hidden', () => {
         const controller = Object.create(UIController.prototype);
