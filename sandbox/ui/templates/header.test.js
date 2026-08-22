@@ -42,7 +42,7 @@ describe('HeaderTemplate', () => {
         expect(trigger.getAttribute('aria-haspopup')).toBe('listbox');
         expect(trigger.getAttribute('aria-expanded')).toBe('false');
         expect(trigger.querySelector('.model-picker-current')).not.toBeNull();
-        expect(trigger.querySelector('.model-picker-current').textContent).toBe('3.6 Flash');
+        expect(trigger.querySelector('.model-picker-current').textContent).toBe('3.7 Flash');
         expect(trigger.querySelectorAll('svg')).toHaveLength(0);
         expect(wrapper.contains(thinkingToggle)).toBe(true);
         expect(thinkingToggle.hidden).toBe(true);

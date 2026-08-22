@@ -75,8 +75,8 @@ function buildModelHeader(model, requestId, thinkingLevel, { temporaryChat = fal
     header[0] = 1;
     header[4] = config.hash;
     header[7] = temporaryChat === true ? true : 0;
-    header[8] = WEB_CLIENT_CAPABILITIES;
-    header[11] = config.mode;
+    header[8] = config.capabilities || WEB_CLIENT_CAPABILITIES;
+    header[11] = config.legacyMode ?? config.mode;
     header[14] = config.mode;
     header[15] = getWebNativeThinkingLevel(model, thinkingLevel);
     header[16] = requestId;

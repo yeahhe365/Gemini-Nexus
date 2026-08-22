@@ -67,7 +67,7 @@ Gemini Nexus 当前围绕浏览器内 AI 工作流提供以下能力：
 | 驱动方案              | 逻辑入口               | 支持模型                                    | 核心优势                                                            | 使用前提                |
 | :-------------------- | :--------------------- | :------------------------------------------ | :------------------------------------------------------------------ | :---------------------- |
 | **Web Client**        | `web.js`               | 当前 Gemini Web 聊天模式                    | **免 API Key**，复用 Gemini 网页版会话，支持可选临时对话            | 需保持 Google 账号登录  |
-| **Official API**      | `official.js`          | Gemini 3.6 Flash / 3.5 Flash-Lite / 3.1 Pro | **极速响应**，支持 **Thinking** 与 Google Search grounding          | 需 Google AI Studio Key |
+| **Official API**      | `official.js`          | Gemini 3.7 Flash / 3.6 Flash / 3.5 Flash-Lite / 3.1 Pro | **极速响应**，支持 **Thinking** 与 Google Search grounding          | 需 Google AI Studio Key |
 | **OpenAI Compatible** | `openai_compatible.js` | GPT/Claude/兼容模型                         | **高扩展性**，支持 Chat Completions / Responses API 与可选联网搜索  | 需第三方服务密钥        |
 | **OpenAI 官方 API**   | `openai_compatible.js` | GPT 推理/搜索模型                           | 专门走 Responses API，支持 reasoning summary 与可选联网搜索         | 需 OpenAI API Key       |
 | **DeepSeek API**      | `openai_compatible.js` | DeepSeek 对话/推理模型                      | DeepSeek Chat Completions 默认端点，并显示 `reasoning_content`      | 需 DeepSeek API Key     |

@@ -83,6 +83,37 @@ describe('sendWebMessage', () => {
         expect(modelHeader[7]).toBe(0);
     });
 
+    it('uses the captured Gemini 3.7 Flash Web model contract', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            body: makeStream(buildGeminiLine()),
+        });
+
+        await sendWebMessage(
+            'hello',
+            {
+                atValue: 'at-token',
+                blValue: 'bl-token',
+                fSid: 'sid-token',
+                locale: 'en-US',
+                authUser: '0',
+            },
+            '56fdd199312815e2',
+            [],
+            undefined,
+            undefined,
+            { thinkingLevel: 'medium' }
+        );
+
+        const [, init] = global.fetch.mock.calls[0];
+        const modelHeader = JSON.parse(init.headers['x-goog-ext-525001261-jspb']);
+        expect(modelHeader[4]).toBe('56fdd199312815e2');
+        expect(modelHeader[8]).toEqual([4, 5, 6, 8, 4, 5, 6, 8]);
+        expect(modelHeader[11]).toBe(2);
+        expect(modelHeader[14]).toBe(1);
+        expect(modelHeader[15]).toBe(2);
+    });
+
     it('sends the selected Gemini Web thinking mode as native side-channel metadata', async () => {
         global.fetch = vi.fn().mockResolvedValue({
             ok: true,
