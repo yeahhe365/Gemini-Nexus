@@ -3,6 +3,7 @@ import {
     DEFAULT_MCP_SSE_URL,
     DEFAULT_MCP_TRANSPORT,
     DEFAULT_MCP_WS_URL,
+    DEFAULT_NOAUTH_MODEL,
     DEFAULT_OFFICIAL_BASE_URL,
     DEFAULT_OFFICIAL_MODELS,
     DEFAULT_OPENAI_MODEL,
@@ -85,6 +86,10 @@ export function getSelectedModelForProvider(
 
     if (isDedicatedApiProvider(provider)) {
         return getDedicatedApiSelectedModel(storageData, provider);
+    }
+
+    if (provider === 'gemini_noauth') {
+        return DEFAULT_NOAUTH_MODEL;
     }
 
     return storageData.geminiModel || DEFAULT_STORED_GEMINI_MODEL;

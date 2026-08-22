@@ -124,6 +124,7 @@ describe('GeminiToolbarTemplates', () => {
             'dashscope',
             'anthropic',
             'zhipu',
+            'gemini_noauth',
         ]);
         expect(options.map((option) => option.textContent)).toEqual([
             'Web',
@@ -135,6 +136,7 @@ describe('GeminiToolbarTemplates', () => {
             'DashScope',
             'Anthropic',
             'Zhipu',
+            'No-Auth Gemini',
         ]);
     });
 

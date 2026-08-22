@@ -228,7 +228,7 @@ export class ConnectionSection {
         if (officialFields) officialFields.hidden = provider !== 'official';
         if (openaiFields) openaiFields.hidden = provider !== 'openai';
         if (dedicatedApiFields) dedicatedApiFields.hidden = !isDedicatedApiProvider(provider);
-        if (provider === 'web') {
+        if (provider === 'web' || provider === 'gemini_noauth') {
             apiKeyContainer.hidden = true;
         } else {
             apiKeyContainer.hidden = false;

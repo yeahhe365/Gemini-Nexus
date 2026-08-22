@@ -34,6 +34,18 @@
         return getConfig().DEFAULT_OPENAI_MODEL || '';
     }
 
+    function getDefaultNoAuthModel() {
+        return getConfig().DEFAULT_NOAUTH_MODEL || 'gemini-3.7-flash';
+    }
+
+    function createNoAuthModelOptions() {
+        const fallback = getDefaultNoAuthModel();
+        return createCustomModelOptions(getConfig().DEFAULT_NOAUTH_MODELS, {
+            value: fallback,
+            label: fallback,
+        });
+    }
+
     function getDedicatedProviderConfig(provider) {
         return getConfig().DEDICATED_API_PROVIDERS?.[provider] || null;
     }
@@ -449,6 +461,8 @@
                     value: getDefaultOpenAIModel(),
                     label: getStrings().customModel || 'Custom Model',
                 });
+            } else if (provider === 'gemini_noauth') {
+                options = createNoAuthModelOptions();
             } else if (getDedicatedProviderConfig(provider)) {
                 options = createDedicatedModelOptions(settings, provider);
             } else {

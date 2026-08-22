@@ -3,6 +3,7 @@ import { sendOfficialMessage } from '../../../services/providers/official.js';
 import { sendOpenAIMessage } from '../../../services/providers/openai_compatible.js';
 import { sendAnthropicMessage } from '../../../services/providers/anthropic.js';
 import { sendWebMessage } from '../../../services/providers/web.js';
+import { sendNoAuthGeminiMessage } from '../../../services/providers/noauth.js';
 import { prepareManagedContext } from './context_manager.js';
 import { getHistory } from './history_store.js';
 import { RequestDispatcher } from './request_dispatcher.js';
@@ -21,6 +22,10 @@ vi.mock('../../../services/providers/anthropic.js', () => ({
 
 vi.mock('../../../services/providers/web.js', () => ({
     sendWebMessage: vi.fn(),
+}));
+
+vi.mock('../../../services/providers/noauth.js', () => ({
+    sendNoAuthGeminiMessage: vi.fn(),
 }));
 
 vi.mock('./history_store.js', () => ({
@@ -48,6 +53,36 @@ describe('RequestDispatcher response mapping', () => {
     afterEach(() => {
         vi.useRealTimers();
         vi.restoreAllMocks();
+    });
+
+    it('routes no-auth requests to Gemini 3.7 Flash without Web authentication', async () => {
+        sendNoAuthGeminiMessage.mockResolvedValue({ text: 'anonymous response' });
+        const dispatcher = new RequestDispatcher({ ensureInitialized: vi.fn() });
+        const onUpdate = vi.fn();
+
+        await expect(
+            dispatcher.dispatch(
+                { text: 'hello', model: 'gemini-3.7-flash', sessionId: 'session-1' },
+                { provider: 'gemini_noauth' },
+                [],
+                onUpdate,
+                undefined
+            )
+        ).resolves.toEqual(
+            expect.objectContaining({
+                text: 'anonymous response',
+                status: 'success',
+                context: null,
+            })
+        );
+
+        expect(sendNoAuthGeminiMessage).toHaveBeenCalledWith(
+            'hello',
+            'gemini-3.7-flash',
+            [],
+            undefined,
+            onUpdate
+        );
     });
 
     it('preserves official provider response metadata in a Gemini reply', async () => {

@@ -17,6 +17,7 @@ export const ConnectionSettingsTemplate = `
                 <option value="dashscope" data-i18n="providerDashScope">Qwen / DashScope API</option>
                 <option value="anthropic" data-i18n="providerAnthropic">Anthropic API</option>
                 <option value="zhipu" data-i18n="providerZhipu">Zhipu API</option>
+                <option value="gemini_noauth" data-i18n="providerGeminiNoAuth">No-Auth Gemini (Web2API)</option>
             </select>
 
             <div id="web-fields" class="settings-stack settings-section-offset">

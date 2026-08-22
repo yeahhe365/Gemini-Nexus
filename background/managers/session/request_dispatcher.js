@@ -1,5 +1,6 @@
 import { sendOfficialMessage } from '../../../services/providers/official.js';
 import { sendWebMessage } from '../../../services/providers/web.js';
+import { sendNoAuthGeminiMessage } from '../../../services/providers/noauth.js';
 import { sendOpenAIMessage } from '../../../services/providers/openai_compatible.js';
 import { sendAnthropicMessage } from '../../../services/providers/anthropic.js';
 import {
@@ -334,7 +335,15 @@ export class RequestDispatcher {
     }
 
     async dispatch(request, settings, files, onUpdate, signal) {
-        if (settings.provider === 'official') {
+        if (settings.provider === 'gemini_noauth') {
+            return await this._handleNoAuthGeminiRequest(
+                request,
+                settings,
+                files,
+                onUpdate,
+                signal
+            );
+        } else if (settings.provider === 'official') {
             return await this._handleOfficialRequest(request, settings, files, onUpdate, signal);
         } else if (settings.provider === 'openai') {
             return await this._handleOpenAIRequest(request, settings, files, onUpdate, signal);
@@ -349,6 +358,37 @@ export class RequestDispatcher {
         } else {
             return await this._handleWebRequest(request, settings, files, onUpdate, signal);
         }
+    }
+
+    async _handleNoAuthGeminiRequest(request, settings, files, onUpdate, signal) {
+        const history = await resolveRequestHistory(request, files);
+
+        let fullText = request.text;
+        if (request.systemInstruction) {
+            fullText = request.systemInstruction + '\n\nQuestion: ' + fullText;
+        }
+        fullText = buildWebPromptWithHistory(fullText, history);
+
+        const response = await sendNoAuthGeminiMessage(
+            fullText,
+            request.model,
+            files,
+            signal,
+            onUpdate
+        );
+
+        if (response?.truncated) {
+            throw new Error(
+                isZhLocale()
+                    ? '回复被截断（网络错误）。请重试。'
+                    : 'The response was truncated (network error). Please retry.'
+            );
+        }
+
+        return createSuccessReply(request, response, {
+            sources: [],
+            context: null,
+        });
     }
 
     async _handleOfficialRequest(request, settings, files, onUpdate, signal) {

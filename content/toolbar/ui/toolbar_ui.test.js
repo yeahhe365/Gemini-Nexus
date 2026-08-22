@@ -9,6 +9,10 @@ describe('ToolbarUI renderer bridge lifecycle', () => {
         vi.resetModules();
         document.body.innerHTML = '';
         bridgeInstances = [];
+        globalThis.GeminiNexusConfig = {
+            DEFAULT_NOAUTH_MODEL: 'gemini-3.7-flash',
+            DEFAULT_NOAUTH_MODELS: 'gemini-3.7-flash, gemini-3.6-flash',
+        };
 
         window.GeminiToolbarDOM = class {
             create() {
@@ -39,6 +43,11 @@ describe('ToolbarUI renderer bridge lifecycle', () => {
             }
 
             setSelectedTranslationTargets() {}
+            setSelectedProvider() {}
+            updateModelOptions = vi.fn();
+            getSelectedModel() {
+                return 'gemini-3.7-flash';
+            }
         };
 
         window.GeminiUIGrammar = class {
@@ -126,6 +135,7 @@ describe('ToolbarUI renderer bridge lifecycle', () => {
         delete window.GeminiDragController;
         delete window.GeminiToolbarEvents;
         delete window.GeminiViewLayout;
+        delete globalThis.GeminiNexusConfig;
     });
 
     it('creates a Markdown renderer bridge on first build', () => {
@@ -150,5 +160,20 @@ describe('ToolbarUI renderer bridge lifecycle', () => {
         expect(bridgeInstances[1].destroyed).toBe(false);
         expect(ui.bridge).toBe(bridgeInstances[1]);
         expect(ui.renderer.bridge).toBe(bridgeInstances[1]);
+    });
+
+    it('shows no-auth model names with Gemini 3.7 Flash first', () => {
+        const ui = new window.GeminiToolbarUI();
+        ui.build();
+
+        ui.updateModelList({ provider: 'gemini_noauth' }, 'gemini-3.7-flash');
+
+        expect(ui.view.updateModelOptions).toHaveBeenCalledWith(
+            [
+                { value: 'gemini-3.7-flash', label: 'gemini-3.7-flash' },
+                { value: 'gemini-3.6-flash', label: 'gemini-3.6-flash' },
+            ],
+            'gemini-3.7-flash'
+        );
     });
 });
