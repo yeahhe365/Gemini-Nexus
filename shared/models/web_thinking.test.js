@@ -18,6 +18,7 @@ describe('web thinking helpers', () => {
     });
 
     it('uses minimal as the fast toggle for Flash models and low for Pro', () => {
+        expect(getWebThinkingFastLevel('56fdd199312815e2')).toBe('minimal');
         expect(getWebThinkingFastLevel('fbb127bbb056c959')).toBe('minimal');
         expect(getWebThinkingFastLevel('cf41b0e0dd7d53e5')).toBe('minimal');
         expect(getWebThinkingFastLevel('e6fa609c3fa255c0')).toBe('low');
@@ -51,6 +52,7 @@ describe('web thinking helpers', () => {
     });
 
     it('only supports known Gemini Web reverse models', () => {
+        expect(supportsWebThinking('gemini-3.7-flash')).toBe(true);
         expect(supportsWebThinking('gemini-3.6-flash')).toBe(true);
         expect(supportsWebThinking('gemini-3.5-flash-lite')).toBe(true);
         expect(supportsWebThinking('gemini-3-flash-thinking')).toBe(true);
