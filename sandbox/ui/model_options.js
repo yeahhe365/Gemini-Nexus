@@ -2,6 +2,8 @@ import {
     DEFAULT_OFFICIAL_MODEL,
     DEFAULT_OPENAI_MODEL,
     DEFAULT_PROVIDER,
+    DEFAULT_NOAUTH_MODEL,
+    DEFAULT_NOAUTH_MODELS,
 } from '../../shared/config/constants.js';
 import {
     getDedicatedApiDefaultModel,
@@ -46,6 +48,13 @@ export function createModelOptions(settings) {
         return models.length > 0
             ? models.map((model) => ({ value: model, label: model }))
             : [{ value: fallback, label: fallback || t('customModel') }];
+    }
+
+    if (provider === 'gemini_noauth') {
+        const models = parseConfiguredModels(DEFAULT_NOAUTH_MODELS);
+        return models.length > 0
+            ? models.map((model) => ({ value: model, label: model }))
+            : [{ value: DEFAULT_NOAUTH_MODEL, label: DEFAULT_NOAUTH_MODEL }];
     }
 
     return createWebModelOptions();

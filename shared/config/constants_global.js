@@ -159,8 +159,12 @@
         DEFAULT_PROVIDER: 'web',
         DEFAULT_STORED_GEMINI_MODEL: 'fbb127bbb056c959',
         DEFAULT_OFFICIAL_MODEL: 'gemini-3.7-flash',
-        DEFAULT_OFFICIAL_MODELS: 'gemini-3.7-flash, gemini-3.6-flash, gemini-3.5-flash-lite, gemini-3.1-pro-preview',
+        DEFAULT_OFFICIAL_MODELS:
+            'gemini-3.7-flash, gemini-3.6-flash, gemini-3.5-flash-lite, gemini-3.1-pro-preview',
         DEFAULT_OFFICIAL_BASE_URL: 'https://generativelanguage.googleapis.com/v1beta',
+        DEFAULT_NOAUTH_MODEL: 'gemini-3.7-flash',
+        DEFAULT_NOAUTH_MODELS:
+            'gemini-3.7-flash, gemini-3.6-flash, gemini-3.5-flash-thinking, gemini-3.5-flash, gemini-3.1-pro, gemini-auto, gemini-flash-lite',
         DEFAULT_OPENAI_MODEL: 'openai_custom',
         DEFAULT_THINKING_LEVEL: 'low',
         DEFAULT_CONTEXT_MODE: 'summary',

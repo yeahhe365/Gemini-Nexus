@@ -144,6 +144,7 @@
             providerDashScopeShort: isZh ? '通义' : 'DashScope',
             providerAnthropicShort: 'Anthropic',
             providerZhipuShort: isZh ? '智谱' : 'Zhipu',
+            providerGeminiNoAuthShort: isZh ? '无鉴权 Gemini' : 'No-Auth Gemini',
             windowTitle: 'Gemini Nexus',
             retry: isZh ? '重试' : 'Retry',
             openSidebar: isZh ? '在侧边栏继续' : 'Open in Sidebar',

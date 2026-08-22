@@ -124,6 +124,7 @@ describe('connection settings helpers', () => {
         expect(getConnectionProvider({})).toBe('web');
         expect(getSelectedModelForProvider({}, 'openai')).toBe('openai_custom');
         expect(getSelectedModelForProvider({}, 'deepseek')).toBe('deepseek-v4-pro');
+        expect(getSelectedModelForProvider({}, 'gemini_noauth')).toBe('gemini-3.7-flash');
         expect(getSelectedModelForProvider({}, 'web')).toBe('fbb127bbb056c959');
     });
 

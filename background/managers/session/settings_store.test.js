@@ -130,6 +130,14 @@ describe('getConnectionSettings', () => {
         );
     });
 
+    it('allows routed toolbar requests to select the no-auth provider', async () => {
+        storedSettings = { geminiProvider: 'web' };
+
+        await expect(getConnectionSettings({ provider: 'gemini_noauth' })).resolves.toEqual(
+            expect.objectContaining({ provider: 'gemini_noauth' })
+        );
+    });
+
     it('restores dedicated provider credentials and allows provider overrides', async () => {
         storedSettings = {
             geminiProvider: 'web',

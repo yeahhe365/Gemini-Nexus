@@ -21,6 +21,7 @@ import { debugLog } from '../../../shared/logging/debug.js';
 function normalizeProviderOverride(provider) {
     const normalized = String(provider || '').trim();
     return normalized === 'web' ||
+        normalized === 'gemini_noauth' ||
         normalized === 'official' ||
         normalized === 'openai' ||
         isDedicatedApiProvider(normalized)
