@@ -2,7 +2,7 @@
 
 这份文档来自 Gemini Nexus 9.0.8 的实际移植。Chrome 包在 `artifacts/chrome-extension/`，Firefox 包在 `artifacts/firefox-extension/`。两边共用同一套源码，差异集中在打包时改写的 manifest，以及一个只在 Firefox 生效的兼容层。
 
-下次移植另一个 Chrome MV3 扩展时，按下面的顺序做。不要先复制出一份 Firefox 专用源码树。本仓库里的 `firefox/` 是旧草稿，不是当前产物。
+下次移植另一个 Chrome MV3 扩展时，按下面的顺序做。不要先复制出一份 Firefox 专用源码树。当前 Firefox 产物只来自 `npm run package:firefox`。
 
 项目里和这次移植对应的文件：
 

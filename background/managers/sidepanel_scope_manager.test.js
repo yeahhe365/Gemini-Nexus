@@ -72,6 +72,73 @@ describe('SidePanelScopeManager tab-scoped paths', () => {
         expect(chrome.sidePanel.open).toHaveBeenCalledWith({ tabId: 123, windowId: 456 });
     });
 
+    it('reopens a Firefox sidebar after the user closed it outside the extension', async () => {
+        let open = false;
+        const calls = [];
+        globalThis.browser = {
+            sidebarAction: {
+                setPanel: vi.fn((details) => {
+                    calls.push('setPanel');
+                    expect(details).toEqual({
+                        panel: 'sidepanel/index.html?tabId=123',
+                        tabId: 123,
+                    });
+                    return Promise.resolve();
+                }),
+                toggle: vi.fn(() => {
+                    calls.push('toggle');
+                    open = !open;
+                    return Promise.resolve();
+                }),
+                isOpen: vi.fn(({ windowId }) => {
+                    expect(windowId).toBe(456);
+                    return Promise.resolve(open);
+                }),
+            },
+        };
+        const manager = new SidePanelScopeManager();
+        manager.markOpenForTab(123);
+
+        try {
+            const result = await manager.toggleForTab(123, 456);
+
+            expect(result).toEqual({ status: 'opened' });
+            expect(calls).toEqual(['setPanel', 'toggle']);
+            expect(globalThis.browser.sidebarAction.toggle).toHaveBeenCalledWith();
+            expect(manager.isOpenForTab(123)).toBe(true);
+            expect(chrome.sidePanel.open).not.toHaveBeenCalled();
+            expect(chrome.sidePanel.setOptions).not.toHaveBeenCalled();
+        } finally {
+            delete globalThis.browser;
+        }
+    });
+
+    it('closes an open Firefox sidebar from the toolbar button', async () => {
+        let open = true;
+        globalThis.browser = {
+            sidebarAction: {
+                setPanel: vi.fn(() => Promise.resolve()),
+                toggle: vi.fn(() => {
+                    open = !open;
+                    return Promise.resolve();
+                }),
+                isOpen: vi.fn(() => Promise.resolve(open)),
+            },
+        };
+        const manager = new SidePanelScopeManager();
+        manager.markOpenForTab(123);
+
+        try {
+            const result = await manager.toggleForTab(123, 456);
+
+            expect(result).toEqual({ status: 'closed' });
+            expect(manager.isOpenForTab(123)).toBe(false);
+            expect(chrome.sidePanel.setOptions).not.toHaveBeenCalled();
+        } finally {
+            delete globalThis.browser;
+        }
+    });
+
     it('continues opening remembered-tab panels when enabled-tab persistence fails', async () => {
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
         chrome.storage.session.set.mockRejectedValueOnce(new Error('Session storage unavailable'));

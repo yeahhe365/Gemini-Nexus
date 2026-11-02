@@ -158,9 +158,15 @@
     try {
         var sidebarAction = browserNs.sidebarAction;
         if (sidebarAction) {
-            var openPanelForWindow = function (windowId) {
+            // Firefox sidebarAction.open/close/toggle take no arguments and
+            // throw on extras. They also require the calling turn to still be
+            // inside the user gesture, so invoke them immediately — never from
+            // a later promise callback.
+            var callSidebarAction = function (methodName) {
+                var method = sidebarAction[methodName];
+                if (typeof method !== 'function') return Promise.resolve();
                 try {
-                    var result = sidebarAction.open({ windowId: windowId });
+                    var result = method.call(sidebarAction);
                     return result && typeof result.then === 'function'
                         ? result
                         : Promise.resolve(result);
@@ -170,15 +176,8 @@
             };
 
             sidePanelShim = {
-                open: function (options) {
-                    var windowId =
-                        options && typeof options.windowId === 'number'
-                            ? options.windowId
-                            : undefined;
-                    if (typeof windowId === 'number') {
-                        return openPanelForWindow(windowId);
-                    }
-                    return Promise.resolve();
+                open: function () {
+                    return callSidebarAction('open');
                 },
                 setOptions: function (options) {
                     options = options || {};
@@ -186,20 +185,29 @@
                     var tabId = options.tabId;
                     var enabled = options.enabled;
                     var chain = Promise.resolve();
-                    if (typeof path === 'string') {
+                    if (typeof path === 'string' && typeof sidebarAction.setPanel === 'function') {
                         var params = { panel: path };
                         if (typeof tabId === 'number') params.tabId = tabId;
-                        chain = chain.then(function () {
-                            return sidebarAction.setPanel(params);
-                        });
+                        try {
+                            var panelResult = sidebarAction.setPanel(params);
+                            chain =
+                                panelResult && typeof panelResult.then === 'function'
+                                    ? panelResult
+                                    : Promise.resolve(panelResult);
+                        } catch (error) {
+                            return Promise.reject(error);
+                        }
                     }
-                    if (typeof enabled === 'boolean' && typeof tabId === 'number') {
-                        chain = chain.then(function () {
-                            if (typeof sidebarAction.setEnabled === 'function') {
-                                return sidebarAction.setEnabled({ tabId: tabId, enabled: enabled });
-                            }
-                            return undefined;
-                        });
+                    // Chrome hides a side panel with setOptions({ enabled: false }).
+                    // Firefox has no per-tab enabled flag. close() is the hide,
+                    // but a path update — including disabling the default panel
+                    // while a tab panel is enabled — must not dismiss the sidebar.
+                    if (
+                        enabled === false &&
+                        typeof path !== 'string' &&
+                        typeof sidebarAction.close === 'function'
+                    ) {
+                        chain = callSidebarAction('close');
                     }
                     return chain;
                 },

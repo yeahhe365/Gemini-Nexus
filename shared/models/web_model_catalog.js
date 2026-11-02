@@ -10,6 +10,7 @@
             { value: '8c46e95b1a07cecc', label: '3.5 Flash-Lite' },
             { value: '56fdd199312815e2', label: '3.8 Flash' },
             { value: 'e6fa609c3fa255c0', label: '3.1 Pro' },
+            { value: '95a4c0abcba24364', label: '4 Argon' },
         ].map((option) => Object.freeze(option))
     );
 
@@ -24,6 +25,7 @@
         'gemini-3-flash-thinking': '56fdd199312815e2',
         'gemini-3.1-pro': 'e6fa609c3fa255c0',
         'gemini-3-pro': 'e6fa609c3fa255c0',
+        'gemini-4-argon': '95a4c0abcba24364',
     });
 
     const WEB_MODEL_HEADER_CONFIGS = Object.freeze({
@@ -44,6 +46,14 @@
         e6fa609c3fa255c0: Object.freeze({
             hash: 'e6fa609c3fa255c0',
             mode: 3,
+            fastThinkingLevel: 'low',
+        }),
+        // 4 Argon is selected by mode 8 in header index 14. The otAQ7b menu
+        // hash is still sent; index 11 stays 1, matching captured Web requests.
+        '95a4c0abcba24364': Object.freeze({
+            hash: '95a4c0abcba24364',
+            legacyMode: 1,
+            mode: 8,
             fastThinkingLevel: 'low',
         }),
     });

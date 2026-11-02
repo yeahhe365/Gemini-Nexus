@@ -18,11 +18,11 @@ Supported:
     - `8c46e95b1a07cecc` -> `3.5 Flash-Lite`
     - `56fdd199312815e2` -> `3.8 Flash` (default)
     - `e6fa609c3fa255c0` -> `3.1 Pro`
+    - `95a4c0abcba24364` -> `4 Argon` (header index 14 mode `8`, index 11 `1`)
 
-The current Gemini Web model menu also advertises `4 Argon`, but its internal
-Web hash and request contract have not yet been captured. It is deliberately
-not exposed until those values are verified; the public API model id cannot be
-used in the reverse-engineered Web request.
+`4 Argon` comes from the logged-in Gemini Web model menu (`otAQ7b`). The menu
+hash alone does not select it: captured requests select it with mode `8`.
+Accounts that do not have Argon are silently downgraded by Gemini Web.
 
 Not claimed as complete:
 

@@ -14,6 +14,7 @@ describe('web model metadata', () => {
             { value: '8c46e95b1a07cecc', label: '3.5 Flash-Lite' },
             { value: '56fdd199312815e2', label: '3.8 Flash' },
             { value: 'e6fa609c3fa255c0', label: '3.1 Pro' },
+            { value: '95a4c0abcba24364', label: '4 Argon' },
         ]);
     });
 
@@ -23,6 +24,7 @@ describe('web model metadata', () => {
         expect(markup).toContain('<option value="8c46e95b1a07cecc">3.5 Flash-Lite</option>');
         expect(markup).toContain('<option value="56fdd199312815e2">3.8 Flash</option>');
         expect(markup).toContain('<option value="e6fa609c3fa255c0">3.1 Pro</option>');
+        expect(markup).toContain('<option value="95a4c0abcba24364">4 Argon</option>');
         expect(markup).not.toContain('gemini-3.1-flash-image-preview');
         expect(markup).not.toContain('gemini-3-pro-image-preview-11-2025');
     });
@@ -54,5 +56,11 @@ describe('web model metadata', () => {
         expect(getWebModelHeaderConfig('gemini-3-pro')).toEqual(
             getWebModelHeaderConfig('e6fa609c3fa255c0')
         );
+        expect(getWebModelHeaderConfig('gemini-4-argon')).toEqual({
+            hash: '95a4c0abcba24364',
+            legacyMode: 1,
+            mode: 8,
+            fastThinkingLevel: 'low',
+        });
     });
 });

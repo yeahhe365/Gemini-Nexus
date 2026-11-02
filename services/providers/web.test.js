@@ -114,6 +114,37 @@ describe('sendWebMessage', () => {
         expect(modelHeader[15]).toBe(2);
     });
 
+    it('selects Gemini 4 Argon with mode 8', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            body: makeStream(buildGeminiLine()),
+        });
+
+        await sendWebMessage(
+            'hello',
+            {
+                atValue: 'at-token',
+                blValue: 'bl-token',
+                fSid: 'sid-token',
+                locale: 'en-US',
+                authUser: '0',
+            },
+            '95a4c0abcba24364',
+            [],
+            undefined,
+            undefined,
+            { thinkingLevel: 'low' }
+        );
+
+        const [, init] = global.fetch.mock.calls[0];
+        const modelHeader = JSON.parse(init.headers['x-goog-ext-525001261-jspb']);
+        expect(modelHeader[4]).toBe('95a4c0abcba24364');
+        expect(modelHeader[8]).toEqual([4, 5, 6, 8]);
+        expect(modelHeader[11]).toBe(1);
+        expect(modelHeader[14]).toBe(8);
+        expect(modelHeader[15]).toBe(1);
+    });
+
     it('sends the selected Gemini Web thinking mode as native side-channel metadata', async () => {
         global.fetch = vi.fn().mockResolvedValue({
             ok: true,

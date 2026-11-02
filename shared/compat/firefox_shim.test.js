@@ -151,7 +151,10 @@ describe('shared/compat/firefox_shim', () => {
             return true;
         });
 
-        const response = await context.chrome.runtime.sendMessage({ action: 'SEND_PROMPT', text: 'hi' });
+        const response = await context.chrome.runtime.sendMessage({
+            action: 'SEND_PROMPT',
+            text: 'hi',
+        });
 
         expect(release).toBe(true);
         expect(response).toEqual({ status: 'completed', echo: 'hi' });
@@ -215,6 +218,42 @@ describe('shared/compat/firefox_shim', () => {
         expect(typeof context.chrome.sidePanel?.setPanelBehavior).toBe('function');
         expect(typeof context.chrome.sidePanel?.open).toBe('function');
         expect(typeof context.chrome.sidePanel?.setOptions).toBe('function');
+    });
+
+    it('calls Firefox sidebar open and close with no arguments', async () => {
+        const { context, browser } = createFirefoxSandbox();
+        const calls = [];
+        browser.sidebarAction.open = function () {
+            calls.push(['open', arguments.length]);
+            return Promise.resolve();
+        };
+        browser.sidebarAction.close = function () {
+            calls.push(['close', arguments.length]);
+            return Promise.resolve();
+        };
+        browser.sidebarAction.setPanel = function (details) {
+            calls.push(['setPanel', details]);
+            return Promise.resolve();
+        };
+
+        await context.chrome.sidePanel.open({ tabId: 7, windowId: 3 });
+        await context.chrome.sidePanel.setOptions({ tabId: 7, enabled: false });
+        await context.chrome.sidePanel.setOptions({
+            path: 'sidepanel/index.html',
+            enabled: false,
+        });
+        await context.chrome.sidePanel.setOptions({
+            tabId: 7,
+            path: 'sidepanel/index.html?tabId=7',
+            enabled: true,
+        });
+
+        expect(calls).toEqual([
+            ['open', 0],
+            ['close', 0],
+            ['setPanel', { panel: 'sidepanel/index.html' }],
+            ['setPanel', { panel: 'sidepanel/index.html?tabId=7', tabId: 7 }],
+        ]);
     });
 
     it('reports chrome.runtime.lastError when callback operation fails', async () => {

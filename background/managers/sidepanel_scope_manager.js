@@ -2,6 +2,12 @@ import { DEFAULT_SIDE_PANEL_SCOPE } from '../../shared/config/constants.js';
 
 const DEFAULT_PANEL_PATH = 'sidepanel/index.html';
 
+function getFirefoxSidebarAction() {
+    const sidebarAction = globalThis.browser?.sidebarAction;
+    if (!sidebarAction || typeof sidebarAction.toggle !== 'function') return null;
+    return sidebarAction;
+}
+
 export function getPanelPathForTab(tabId) {
     const normalizedTabId = Number(tabId);
     if (!Number.isInteger(normalizedTabId) || normalizedTabId <= 0) {
@@ -265,6 +271,11 @@ export class SidePanelScopeManager {
     }
 
     async toggleForTab(tabId, windowId) {
+        const sidebarAction = getFirefoxSidebarAction();
+        if (sidebarAction) {
+            return this.toggleFirefoxSidebar(tabId, windowId, sidebarAction);
+        }
+
         if (this.isOpenForTab(tabId)) {
             await this.closeForTab(tabId);
             return { status: 'closed' };
@@ -272,5 +283,78 @@ export class SidePanelScopeManager {
 
         await this.openForTab(tabId, windowId);
         return { status: 'opened' };
+    }
+
+    async isFirefoxSidebarOpen(sidebarAction, windowId) {
+        if (typeof sidebarAction.isOpen !== 'function') return null;
+        try {
+            return await sidebarAction.isOpen(Number.isInteger(windowId) ? { windowId } : {});
+        } catch (error) {
+            console.warn('[SidePanelScopeManager] Failed to read Firefox sidebar state:', error);
+            return null;
+        }
+    }
+
+    async rememberEnabledTab(tabId) {
+        if (!tabId || this.scope !== DEFAULT_SIDE_PANEL_SCOPE || this.enabledTabs[tabId]) return;
+        this.enabledTabs[tabId] = true;
+        try {
+            await this.persistEnabledTabs();
+        } catch (error) {
+            console.warn('[SidePanelScopeManager] Failed to persist remembered tab state:', error);
+        }
+    }
+
+    /**
+     * Firefox does not open the sidebar from the toolbar button, and
+     * `sidebarAction.toggle()` is the call that both opens and closes it.
+     * It must run synchronously inside the action click: awaiting first drops
+     * the user gesture, and `open()` / `close()` / `toggle()` reject any
+     * arguments. In-memory `openTabs` also stays set when the user closes the
+     * sidebar with its own button, so trusting it makes the next click try to
+     * close an already-closed sidebar.
+     */
+    toggleFirefoxSidebar(tabId, windowId, sidebarAction) {
+        const path = getPanelPathForTab(tabId);
+        if (typeof sidebarAction.setPanel === 'function') {
+            try {
+                Promise.resolve(sidebarAction.setPanel({ panel: path, tabId })).catch((error) => {
+                    console.warn(
+                        '[SidePanelScopeManager] Failed to set Firefox sidebar panel:',
+                        error
+                    );
+                });
+            } catch (error) {
+                console.warn('[SidePanelScopeManager] Failed to set Firefox sidebar panel:', error);
+            }
+        }
+
+        let toggleResult;
+        try {
+            toggleResult = sidebarAction.toggle();
+        } catch (error) {
+            return Promise.reject(error);
+        }
+
+        return Promise.resolve(toggleResult).then(async () => {
+            const opened = await this.isFirefoxSidebarOpen(sidebarAction, windowId);
+            if (opened === true) {
+                await this.rememberEnabledTab(tabId);
+                this.markOpenForTab(tabId);
+                return { status: 'opened' };
+            }
+
+            if (opened === false) {
+                this.markClosedForTab(tabId);
+                return { status: 'closed' };
+            }
+
+            if (this.isOpenForTab(tabId)) {
+                this.markClosedForTab(tabId);
+                return { status: 'closed' };
+            }
+            this.markOpenForTab(tabId);
+            return { status: 'opened' };
+        });
     }
 }

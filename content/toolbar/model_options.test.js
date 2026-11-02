@@ -23,6 +23,7 @@ describe('toolbar web model helper', () => {
             { value: '8c46e95b1a07cecc', label: '3.5 Flash-Lite' },
             { value: '56fdd199312815e2', label: '3.8 Flash' },
             { value: 'e6fa609c3fa255c0', label: '3.1 Pro' },
+            { value: '95a4c0abcba24364', label: '4 Argon' },
         ]);
         expect(window.GeminiWebModels.createOptionMarkup()).not.toContain(
             'gemini-3-pro-image-preview-11-2025'
