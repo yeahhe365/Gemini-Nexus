@@ -66,6 +66,8 @@ shim 把 `browser.*` 包一层：异步方法仍然返回 Promise，如果最后
 
 检查方法：在 Firefox 背景页控制台看存储读取是否返回。如果设置页能打开但导入导出没反应，先查是不是回调被丢了。
 
+上面是 Gemini Nexus 这次移植的实测，shim 按它来写。不要把它写成所有 Firefox 版本的前提。BookmarkHub 0.0.8 用 WXT 打出 Firefox MV2、常驻背景页，没有复现：设置走 `webext-polyfill-kinda`，调用的是 `chrome.storage` 的尾部回调；角标修好之后下载能完成，说明这条回调还能回包。对照当前 mozilla-central，`chrome` 和 `browser` 仍是两个对象。`chrome` 带 `isChromeCompat`，异步方法会把最后一个函数参数交给 `callAsyncFunction`。`ExtensionChild` 的 `MessageEvent` 在监听器 `return true` 时继续等 `sendResponse`。先在目标版本的背景页打一条 `chrome.storage.local.get`。只有回调不回来时才上 shim。
+
 ## 侧栏：这次实际坏过的地方
 
 Chrome 的 `chrome.sidePanel` 在 Firefox 不存在。工具栏按钮也不会因为写了 `sidebar_action` 就自动打开侧栏。必须在 `action.onClicked` 里自己调用 `browser.sidebarAction`。
@@ -113,8 +115,17 @@ Chrome 可以把聊天 UI 放进 `sandbox` 页，sandbox CSP 允许 `'unsafe-inl
 | `chrome.tabGroups` | 没有。调用前用可选链跳过，不要让它抛错中断控制流程 |
 | `sidePanel.setOptions({ enabled })` 按标签开关 | 没有等价物。打开和切换用 `sidebarAction`，按标签禁用是尽力而为 |
 | `chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })` | 空操作。Firefox 不会因此自动打开侧栏 |
+| `browser.action`（仅当产物仍是 MV2） | 没有。MV2 只有 `browser.browserAction`。用 `browser.action ?? browser.browserAction`，调用失败不能挡在 `sendResponse` 前面 |
 
 这些降级要写进用户可见的说明，不要等审核或用户试完才发现。
+
+### MV2 没有 `browser.action`
+
+上面的 Firefox 包是 MV3，`browser.action` 存在。打包器若仍输出 MV2，不能沿用这个假设。WXT 0.19 的 `wxt build -b firefox` 默认就是 MV2：manifest 里是 `browser_action`，不是 `action`。Firefox 给 `action` 命名空间标了 `min_manifest_version: 3`，MV2 里只有 `browser.browserAction`。
+
+BookmarkHub 0.0.8 在这里坏过。下载做完后，背景页先调用 `browser.action.setBadgeText`，再 `sendResponse`。`browser.action` 是 `undefined`，抛错发生在回复之前。弹窗的 `sendMessage` 一直不返回，确认框停在 “Processing...”。
+
+角标写成 `browser.action ?? browser.browserAction`，失败自己吃掉。上传、下载、同步、清空、导入都在操作结束的 `finally` 里回复，成功和失败都要回。
 
 ## 打包
 
@@ -174,7 +185,8 @@ npm run package:firefox
 - 点工具栏图标，侧栏打开。
 - 点侧栏自己的关闭按钮，再点图标，侧栏重新打开。
 - 再点一次图标，侧栏关闭。
-- 设置能读出来，改完能写回去。这是回调兼容的冒烟测试。
+- 设置能读出来，改完能写回去。这是回调兼容的冒烟测试。先确认目标 Firefox 上回调是否真的被丢，再决定要不要上 shim。
+- 产物若是 MV2，做一次会改角标、也会 `sendResponse` 的操作。确认框要离开 “Processing...”，结果通知要出现。
 - 内容脚本在普通网页里生效。MAIN world 那条仍只注入目标站。
 - 依赖 debugger 或 tabGroups 的功能失败时，其余功能还在。
 - 扩展页没有因内联脚本或 sandbox CSP 而白屏。
@@ -188,6 +200,7 @@ npm run package:firefox
 - 不要把 Chrome 的 `sidePanel.open({ windowId })` 原样打到 `sidebarAction.open`。
 - 不要用“内存里记着侧栏开过”代替 `sidebarAction.isOpen()`。
 - 不要在 `await` 之后再调用 `open` / `close` / `toggle`。
+- 不要在 Firefox MV2 里直接调用 `browser.action`。它不存在，抛错会吃掉还没发出的 `sendResponse`。
 - 不要用 PowerShell `Compress-Archive` 做商店包。
 - 不要把源码 zip 当成要签名的附加组件上传。
 - 不要在签过名之后修改 `gecko.id`。
