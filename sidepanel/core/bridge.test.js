@@ -1001,6 +1001,61 @@ describe('MessageBridge model persistence', () => {
         );
     });
 
+    it('persists a changed model without truncating newer stored messages', async () => {
+        const frame = createFrame();
+        const state = createState();
+        const bridge = new MessageBridge(frame, state);
+        chrome.storage.local.get.mockImplementation((keys, callback) =>
+            callback({
+                geminiSessions: [
+                    {
+                        id: 'session-1',
+                        model: 'gemini-3.5-flash-lite',
+                        messages: [
+                            { role: 'user', text: 'Hi' },
+                            { role: 'ai', text: 'Hello' },
+                        ],
+                    },
+                ],
+                geminiDeletedSessionIds: {},
+            })
+        );
+
+        bridge.handleWindowMessage({
+            source: frame.getWindow(),
+            data: {
+                action: 'SAVE_SESSIONS',
+                payload: {
+                    sessions: [
+                        {
+                            id: 'session-1',
+                            model: 'gemini-3.8-flash',
+                            messages: [{ role: 'user', text: 'Hi' }],
+                        },
+                    ],
+                    mutation: {
+                        type: 'updateSessionMetadata',
+                        sessionId: 'session-1',
+                        fields: ['model'],
+                    },
+                },
+            },
+        });
+
+        await vi.waitFor(() =>
+            expect(state.save).toHaveBeenCalledWith('geminiSessions', [
+                expect.objectContaining({
+                    id: 'session-1',
+                    model: 'gemini-3.8-flash',
+                    messages: [
+                        { role: 'user', text: 'Hi' },
+                        { role: 'ai', text: 'Hello' },
+                    ],
+                }),
+            ])
+        );
+    });
+
     it('preserves newer pin state when a stale window only renames a session', async () => {
         const frame = createFrame();
         const state = createState();

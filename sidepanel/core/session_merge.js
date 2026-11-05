@@ -38,7 +38,9 @@ function getMetadataFields(mutation) {
     }
 
     const fields = new Set(
-        mutation.fields.filter((field) => field === 'title' || field === 'isPinned')
+        mutation.fields.filter(
+            (field) => field === 'title' || field === 'isPinned' || field === 'model'
+        )
     );
     return fields.size > 0 ? fields : null;
 }
@@ -127,6 +129,9 @@ export function mergeSessionSaveWithCurrent(
                 }
                 if (!metadataFields || metadataFields.has('isPinned')) {
                     next.isPinned = incoming.isPinned === true;
+                }
+                if (!metadataFields || metadataFields.has('model')) {
+                    next.model = incoming.model || current.model;
                 }
                 return next;
             });
