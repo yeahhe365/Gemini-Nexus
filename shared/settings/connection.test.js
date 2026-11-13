@@ -20,7 +20,8 @@ describe('connection settings helpers', () => {
             openaiSelectedModel: '',
             officialBaseUrl: 'https://generativelanguage.googleapis.com/v1beta',
             apiKey: '',
-            officialModel: 'gemini-3.8-flash, gemini-3.5-flash-lite',
+            officialModel:
+                'gemini-4-hydrogen, gemini-4-argon, gemini-4-carbon, gemini-3.5-flash-lite',
             thinkingLevel: 'low',
             officialWebSearch: false,
             openaiBaseUrl: '',

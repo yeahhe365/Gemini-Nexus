@@ -8,7 +8,7 @@ import {
     getDedicatedApiRuntimeSettings,
     isDedicatedApiProvider,
 } from '../../shared/settings/dedicated_providers.js';
-import { createWebModelOptions } from '../../shared/models/web_models.js';
+import { createWebModelOptions, normalizeWebModel } from '../../shared/models/web_models.js';
 import { t } from '../core/i18n.js';
 
 function getModelProvider(settings) {
@@ -59,6 +59,11 @@ export function getPreferredModel(settings, currentValue) {
     if (isDedicatedApiProvider(provider)) {
         const providerSettings = getDedicatedApiRuntimeSettings(settings, provider);
         return providerSettings?.selectedModel || settings.selectedModel || currentValue;
+    }
+    if (provider === DEFAULT_PROVIDER) {
+        // Saved Web selections can still hold a retired hash; resolve it to the
+        // catalog value so the picker does not silently fall back to the default.
+        return normalizeWebModel(settings.selectedModel || currentValue);
     }
     return settings.selectedModel || currentValue;
 }

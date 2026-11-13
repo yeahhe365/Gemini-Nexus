@@ -8,6 +8,7 @@
         STANDARD: 1,
         EXTENDED: 2,
         DEEP_THINK: 3,
+        MEDIUM: 4,
     });
 
     function normalizeWebThinkingLevel(level, fallback = DEFAULT_WEB_THINKING_LEVEL) {
@@ -48,6 +49,9 @@
         const normalized = normalizeWebThinkingLevelForModel(model, level);
         if (normalized === 'minimal' || normalized === 'low') {
             return WEB_NATIVE_THINKING_LEVELS.STANDARD;
+        }
+        if (normalized === 'medium') {
+            return WEB_NATIVE_THINKING_LEVELS.MEDIUM;
         }
         return WEB_NATIVE_THINKING_LEVELS.EXTENDED;
     }

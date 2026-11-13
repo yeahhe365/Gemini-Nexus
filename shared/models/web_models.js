@@ -19,3 +19,7 @@ export function getWebModelHeaderConfig(model) {
 export function getSupportedWebModelValues() {
     return catalog.getSupportedWebModelValues();
 }
+
+export function normalizeWebModel(model) {
+    return catalog.normalizeWebModel(model);
+}

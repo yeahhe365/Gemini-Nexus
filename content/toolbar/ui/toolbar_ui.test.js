@@ -108,6 +108,21 @@ describe('ToolbarUI renderer bridge lifecycle', () => {
             resetOffset() {},
         };
 
+        window.GeminiNexusWebModelCatalog = {
+            DEFAULT_WEB_MODEL: '56fdd199312815e2',
+            createWebModelOptions: () => [
+                { value: '56fdd199312815e2', label: '4 Hydrogen' },
+                { value: 'argon', label: '4 Argon' },
+            ],
+            normalizeWebModel: (model) =>
+                ({ '95a4c0abcba24364': 'argon' })[model] || model || '56fdd199312815e2',
+        };
+        window.GeminiWebModels = {
+            DEFAULT_WEB_MODEL: '56fdd199312815e2',
+            createOptions: () => window.GeminiNexusWebModelCatalog.createWebModelOptions(),
+            normalizeModel: (model) => window.GeminiNexusWebModelCatalog.normalizeWebModel(model),
+        };
+
         await import('./toolbar_ui.js');
     });
 
@@ -126,6 +141,8 @@ describe('ToolbarUI renderer bridge lifecycle', () => {
         delete window.GeminiDragController;
         delete window.GeminiToolbarEvents;
         delete window.GeminiViewLayout;
+        delete window.GeminiNexusWebModelCatalog;
+        delete window.GeminiWebModels;
     });
 
     it('creates a Markdown renderer bridge on first build', () => {
@@ -190,5 +207,25 @@ describe('ToolbarUI renderer bridge lifecycle', () => {
         } finally {
             delete globalThis.chrome;
         }
+    });
+
+    it('restores a saved Web hash using the current catalog value', () => {
+        const ui = Object.create(window.GeminiToolbarUI.prototype);
+        ui.view = {
+            elements: {},
+            getSelectedModel: () => 'argon',
+            setSelectedProvider: vi.fn(),
+            updateModelOptions: vi.fn(),
+        };
+
+        ui.updateModelList({ provider: 'web' }, '95a4c0abcba24364');
+
+        expect(ui.view.updateModelOptions).toHaveBeenCalledWith(
+            [
+                { value: '56fdd199312815e2', label: '4 Hydrogen' },
+                { value: 'argon', label: '4 Argon' },
+            ],
+            'argon'
+        );
     });
 });

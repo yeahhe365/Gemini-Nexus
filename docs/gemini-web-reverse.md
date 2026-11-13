@@ -1,6 +1,6 @@
 # Gemini Web Reverse Contract
 
-Last verified: 2026-10-14 (Gemini 4 Argon and 3.8 Flash GA lineup on Gemini Web; `95a4c0abcba24364` model contract and mode 8 verified against live web session; `56fdd199312815e2` model contract verified against live web session; older model hashes cross-checked against public reverse catalogs; protocol tokens last captured with `js-reverse` on 2026-05-26, `https://gemini.google.com/app`, locale `zh-CN`).
+Last verified: 2026-11-13 (Gemini 4 Hydrogen / Argon, 3.1 Pro, and 3.5 Flash-Lite lineup on Gemini Web; the `otAQ7b` mode roster and the live mode picker agree on all four model IDs, and each contract was replayed against `StreamGenerate`; `56fdd199312815e2`/`8c46e95b1a07cecc`/`e6fa609c3fa255c0`/`argon` model headers, the mode-8 top tier, and native thinking values 1/2/4 verified against a live web session; older model hashes cross-checked against public reverse catalogs; protocol tokens last captured with `js-reverse` on 2026-05-26, `https://gemini.google.com/app`, locale `zh-CN`).
 
 This document records the Gemini Web assumptions used by the reverse provider. Gemini Web is not a public API, so these details should be treated as a contract that can drift.
 
@@ -15,9 +15,13 @@ Supported:
 - Upload image attachments through the current push upload endpoint before `StreamGenerate`.
 - Parse streamed text, thoughts, continuation ids, and hosted generated-image URLs.
 - Expose the current Gemini Web chat modes:
-    - `56fdd199312815e2` -> `3.8 Flash` (default)
-    - `cf41b0e0dd7d53e5` -> `3.5 Flash-Lite` (live alias: `8c46e95b1a07cecc`)
-    - `95a4c0abcba24364` -> `4 Argon`
+    - `56fdd199312815e2` -> `4 Hydrogen` (default; the picker lists it as everyday help)
+    - `8c46e95b1a07cecc` -> `3.5 Flash-Lite` (quick answers; `cf41b0e0dd7d53e5` still resolves as an alias)
+    - `e6fa609c3fa255c0` -> `3.1 Pro` (deep research)
+    - `argon` -> `4 Argon` (code and analysis; the picker's symbolic mode id, previously the
+      `95a4c0abcba24364` hash, which still resolves as an alias. Mode 8 is the top tier and resolves
+      to `4 Carbon` on AI Ultra accounts, which the Web provider cannot distinguish from the header
+      alone)
 
 Not claimed as complete:
 
@@ -63,23 +67,28 @@ The Web provider sends these side-channel headers:
 
 Current field observations from `BardChatUi`:
 
-| Zero-based index | Meaning                                                           |
-| :--------------- | :---------------------------------------------------------------- |
-| `4`              | Selected model hash                                               |
-| `7`              | Temporary-chat flag                                               |
-| `8`              | Client capabilities; 3.8 Flash currently uses `[4,5,6,8,4,5,6,8]` |
-| `11`             | Legacy model/mode value retained by Nexus                         |
-| `14`             | Native mode category                                              |
-| `15`             | Native thinking level                                             |
-| `16`             | Request UUID                                                      |
+| Zero-based index | Meaning                                                            |
+| :--------------- | :----------------------------------------------------------------- |
+| `4`              | Selected model hash                                                |
+| `7`              | Temporary-chat flag                                                |
+| `8`              | Client capabilities; 4 Hydrogen currently uses `[4,5,6,8,4,5,6,8]` |
+| `11`             | Legacy model/mode value retained by Nexus                          |
+| `14`             | Native mode category                                               |
+| `15`             | Native thinking level                                              |
+| `16`             | Request UUID                                                       |
 
 The native Gemini Web thinking enum is:
 
 | Native value | Live script name            | Nexus level mapping         |
 | :----------- | :-------------------------- | :-------------------------- |
 | `1`          | `THINKING_LEVEL_STANDARD`   | `minimal`, `low`            |
-| `2`          | `THINKING_LEVEL_EXTENDED`   | `medium`, `high`            |
+| `2`          | `THINKING_LEVEL_EXTENDED`   | `high`                      |
 | `3`          | `THINKING_LEVEL_DEEP_THINK` | Reserved; not used by Nexus |
+| `4`          | `THINKING_LEVEL_MEDIUM`     | `medium`                    |
+
+For 4 Hydrogen the live picker offers three thinking options (低 / 中 / 高) and sends native values
+`1`, `4`, `2` for them, so `medium` must map to `4` rather than to `EXTENDED`. 4 Hydrogen's lowest
+option is 低 (`1`), which is why the model's fast toggle is `low` rather than `minimal`.
 
 Gemini Nexus does not prepend hidden thinking instructions to user prompts. The prompt body is sent as authored by the user; thinking depth is controlled by the native side-channel above.
 

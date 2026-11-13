@@ -170,8 +170,9 @@
         normalizeContextRecentTurns,
         DEFAULT_PROVIDER: 'web',
         DEFAULT_STORED_GEMINI_MODEL: '56fdd199312815e2',
-        DEFAULT_OFFICIAL_MODEL: 'gemini-3.8-flash',
-        DEFAULT_OFFICIAL_MODELS: 'gemini-3.8-flash, gemini-3.5-flash-lite',
+        DEFAULT_OFFICIAL_MODEL: 'gemini-4-hydrogen',
+        DEFAULT_OFFICIAL_MODELS:
+            'gemini-4-hydrogen, gemini-4-argon, gemini-4-carbon, gemini-3.5-flash-lite',
         DEFAULT_OFFICIAL_BASE_URL: 'https://generativelanguage.googleapis.com/v1beta',
         DEFAULT_OPENAI_MODEL: 'openai_custom',
         DEFAULT_THINKING_LEVEL: 'low',

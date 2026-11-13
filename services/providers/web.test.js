@@ -83,7 +83,7 @@ describe('sendWebMessage', () => {
         expect(modelHeader[7]).toBe(0);
     });
 
-    it('uses the captured Gemini 3.8 Flash Web model contract', async () => {
+    it('uses the captured Gemini 4 Hydrogen Web model contract', async () => {
         global.fetch = vi.fn().mockResolvedValue({
             ok: true,
             body: makeStream(buildGeminiLine()),
@@ -111,7 +111,7 @@ describe('sendWebMessage', () => {
         expect(modelHeader[8]).toEqual([4, 5, 6, 8, 4, 5, 6, 8]);
         expect(modelHeader[11]).toBe(2);
         expect(modelHeader[14]).toBe(1);
-        expect(modelHeader[15]).toBe(2);
+        expect(modelHeader[15]).toBe(4);
     });
 
     it('uses the captured Gemini 4 Argon Web model contract', async () => {
@@ -129,16 +129,16 @@ describe('sendWebMessage', () => {
                 locale: 'en-US',
                 authUser: '0',
             },
-            '95a4c0abcba24364',
+            'argon',
             [],
             undefined,
             undefined,
-            { thinkingLevel: 'minimal' }
+            { thinkingLevel: 'low' }
         );
 
         const [, init] = global.fetch.mock.calls[0];
         const modelHeader = JSON.parse(init.headers['x-goog-ext-525001261-jspb']);
-        expect(modelHeader[4]).toBe('95a4c0abcba24364');
+        expect(modelHeader[4]).toBe('argon');
         expect(modelHeader[8]).toEqual([4, 5, 6, 8]);
         expect(modelHeader[11]).toBe(8);
         expect(modelHeader[14]).toBe(8);
@@ -160,7 +160,7 @@ describe('sendWebMessage', () => {
                 locale: 'zh-CN',
                 authUser: '0',
             },
-            'cf41b0e0dd7d53e5',
+            '8c46e95b1a07cecc',
             [],
             undefined,
             undefined,
@@ -207,7 +207,7 @@ describe('sendWebMessage', () => {
         expect(modelHeader[7]).toBe(true);
     });
 
-    it('sends native standard thinking for Argon minimal thinking without prompt prefixes', async () => {
+    it('sends native standard thinking for Argon low thinking without prompt prefixes', async () => {
         global.fetch = vi.fn().mockResolvedValue({
             ok: true,
             body: makeStream(buildGeminiLine()),
@@ -222,11 +222,11 @@ describe('sendWebMessage', () => {
                 locale: 'zh-CN',
                 authUser: '0',
             },
-            '95a4c0abcba24364',
+            'argon',
             [],
             undefined,
             undefined,
-            { thinkingLevel: 'minimal' }
+            { thinkingLevel: 'low' }
         );
 
         const [, init] = global.fetch.mock.calls[0];
@@ -256,7 +256,7 @@ describe('sendWebMessage', () => {
         const response = await sendWebMessage(
             '只回复 PROJECT_OK',
             context,
-            'cf41b0e0dd7d53e5',
+            '8c46e95b1a07cecc',
             [],
             undefined
         );
@@ -330,7 +330,7 @@ describe('sendWebMessage', () => {
         await sendWebMessage(
             '分析这张图',
             context,
-            'cf41b0e0dd7d53e5',
+            '8c46e95b1a07cecc',
             [
                 {
                     name: 'image.png',
@@ -396,7 +396,7 @@ describe('sendWebMessage', () => {
                 uploadPushId: 'feeds/upload-dynamic',
                 uploadClientPctx: 'client-pctx-token',
             },
-            'cf41b0e0dd7d53e5',
+            '8c46e95b1a07cecc',
             [
                 {
                     name: 'capture.bin',
@@ -431,7 +431,7 @@ describe('sendWebMessage', () => {
                     uploadPushId: 'feeds/upload-dynamic',
                     uploadClientPctx: 'client-pctx-token',
                 },
-                'cf41b0e0dd7d53e5',
+                '8c46e95b1a07cecc',
                 [
                     {
                         name: 'brief.pdf',
@@ -480,7 +480,7 @@ describe('sendWebMessage', () => {
                     locale: 'zh-CN',
                     authUser: '0',
                 },
-                'cf41b0e0dd7d53e5',
+                '8c46e95b1a07cecc',
                 [],
                 undefined
             )

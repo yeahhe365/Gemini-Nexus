@@ -64,17 +64,17 @@ Gemini Nexus currently focuses on these browser AI workflows:
 
 The project includes provider drivers under `services/providers` and adapts behavior dynamically in code:
 
-| Provider              | Entry                  | Models                             | Strength                                                                             | Requirement                     |
-| :-------------------- | :--------------------- | :--------------------------------- | :----------------------------------------------------------------------------------- | :------------------------------ |
-| **Web Client**        | `web.js`               | Current Gemini Web chat modes      | No API key; reuses the Gemini web session; optional temporary chats                  | Keep a Google account signed in |
-| **Official API**      | `official.js`          | Gemini 3.8 Flash / 3.5 Flash-Lite  | Fast responses with **Thinking** and Google Search grounding                         | Google AI Studio key            |
-| **OpenAI Compatible** | `openai_compatible.js` | GPT, Claude, and compatible models | Highly extensible; supports Chat Completions / Responses API and optional web search | Third-party service key         |
-| **OpenAI Official**   | `openai_compatible.js` | GPT reasoning/search models        | Dedicated Responses API path with reasoning summary and optional web search          | OpenAI API key                  |
-| **DeepSeek API**      | `openai_compatible.js` | DeepSeek chat/reasoning models     | Dedicated defaults for DeepSeek Chat Completions and `reasoning_content` display     | DeepSeek API key                |
-| **OpenRouter API**    | `openai_compatible.js` | OpenRouter model IDs               | Fetches `/models`, supports provider routing JSON, and sends native `reasoning`      | OpenRouter API key              |
-| **Qwen / DashScope**  | `openai_compatible.js` | Qwen text and VL models            | Dedicated DashScope compatible endpoint with `enable_thinking` and VL image input    | DashScope API key               |
-| **Anthropic API**     | `anthropic.js`         | Claude models                      | Native Messages API adapter with image input and extended-thinking stream display    | Anthropic API key               |
-| **Zhipu API**         | `openai_compatible.js` | GLM models                         | Dedicated GLM Chat Completions profile with native thinking toggle payloads          | Zhipu API key                   |
+| Provider              | Entry                  | Models                                       | Strength                                                                             | Requirement                     |
+| :-------------------- | :--------------------- | :------------------------------------------- | :----------------------------------------------------------------------------------- | :------------------------------ |
+| **Web Client**        | `web.js`               | Current Gemini Web chat modes                | No API key; reuses the Gemini web session; optional temporary chats                  | Keep a Google account signed in |
+| **Official API**      | `official.js`          | Gemini 4 Hydrogen / 4 Argon / 3.5 Flash-Lite | Fast responses with **Thinking** and Google Search grounding                         | Google AI Studio key            |
+| **OpenAI Compatible** | `openai_compatible.js` | GPT, Claude, and compatible models           | Highly extensible; supports Chat Completions / Responses API and optional web search | Third-party service key         |
+| **OpenAI Official**   | `openai_compatible.js` | GPT reasoning/search models                  | Dedicated Responses API path with reasoning summary and optional web search          | OpenAI API key                  |
+| **DeepSeek API**      | `openai_compatible.js` | DeepSeek chat/reasoning models               | Dedicated defaults for DeepSeek Chat Completions and `reasoning_content` display     | DeepSeek API key                |
+| **OpenRouter API**    | `openai_compatible.js` | OpenRouter model IDs                         | Fetches `/models`, supports provider routing JSON, and sends native `reasoning`      | OpenRouter API key              |
+| **Qwen / DashScope**  | `openai_compatible.js` | Qwen text and VL models                      | Dedicated DashScope compatible endpoint with `enable_thinking` and VL image input    | DashScope API key               |
+| **Anthropic API**     | `anthropic.js`         | Claude models                                | Native Messages API adapter with image input and extended-thinking stream display    | Anthropic API key               |
+| **Zhipu API**         | `openai_compatible.js` | GLM models                                   | Dedicated GLM Chat Completions profile with native thinking toggle payloads          | Zhipu API key                   |
 
 ### Browser Control
 

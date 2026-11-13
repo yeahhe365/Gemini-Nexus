@@ -26,6 +26,7 @@ export const GEMINI_WEB_EXPECTATIONS = Object.freeze({
         'THINKING_LEVEL_STANDARD',
         'THINKING_LEVEL_EXTENDED',
         'THINKING_LEVEL_DEEP_THINK',
+        'THINKING_LEVEL_MEDIUM',
     ]),
     temporaryChatMarkers: Object.freeze([
         'gemini_chat_temp',

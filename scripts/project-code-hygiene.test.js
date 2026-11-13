@@ -8,14 +8,12 @@ import {
 
 describe('project code hygiene', () => {
     it('does not export helpers that are only used inside their own module', async () => {
-        const webModels = await readProjectFile('shared/models/web_models.js');
         const officialFunctionResponse = await readProjectFile(
             'background/handlers/session/official_function_response.js'
         );
         const uiAsync = await readProjectFile('background/handlers/ui_async.js');
         const packageExtension = await readProjectFile('scripts/package-extension.mjs');
 
-        expect(webModels).not.toMatch(/export function normalizeWebModel\s*\(/);
         expect(officialFunctionResponse).not.toMatch(
             /export function createOfficialFunctionResponsePart\s*\(/
         );

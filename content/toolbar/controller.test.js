@@ -9,7 +9,7 @@ function installControllerDependencies() {
         updateModelList: vi.fn(),
         updateWebThinkingToggle: vi.fn(),
         getProvider: vi.fn(() => 'web'),
-        getSelectedModel: vi.fn(() => 'cf41b0e0dd7d53e5'),
+        getSelectedModel: vi.fn(() => '8c46e95b1a07cecc'),
         getWebThinkingLevel: vi.fn(() => 'high'),
         setWebThinkingLevel: vi.fn(),
         showAskWindow: vi.fn(),
@@ -254,7 +254,7 @@ describe('GeminiToolbarController model persistence', () => {
     });
 
     it('toggles the shared Gemini Web thinking level from the toolbar button', () => {
-        ui.getSelectedModel.mockReturnValue('cf41b0e0dd7d53e5');
+        ui.getSelectedModel.mockReturnValue('8c46e95b1a07cecc');
         ui.getWebThinkingLevel.mockReturnValue('high');
         const controller = new window.GeminiToolbarController();
 

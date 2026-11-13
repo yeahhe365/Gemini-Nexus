@@ -24,8 +24,9 @@ function buildCurrentScript() {
         ...GEMINI_WEB_EXPECTATIONS.nativeThinkingMarkers,
         ...GEMINI_WEB_EXPECTATIONS.temporaryChatMarkers,
         '56fdd199312815e2',
-        'cf41b0e0dd7d53e5',
-        '95a4c0abcba24364',
+        '8c46e95b1a07cecc',
+        'e6fa609c3fa255c0',
+        'argon',
     ].join('\n');
 }
 
@@ -65,8 +66,8 @@ describe('Gemini Web drift check', () => {
                 'Missing current push upload endpoint.',
                 'Missing upload headers: Push-ID, X-Tenant-Id, X-Client-Pctx',
                 'Missing stream side-channel headers: 525001261, 525005358, 73010989, 73010990',
-                'Missing configured model hashes: 56fdd199312815e2, cf41b0e0dd7d53e5, 95a4c0abcba24364',
-                'Missing native thinking markers: THINKING_LEVEL_STANDARD, THINKING_LEVEL_EXTENDED, THINKING_LEVEL_DEEP_THINK',
+                'Missing configured model hashes: 56fdd199312815e2, 8c46e95b1a07cecc, e6fa609c3fa255c0, argon',
+                'Missing native thinking markers: THINKING_LEVEL_STANDARD, THINKING_LEVEL_EXTENDED, THINKING_LEVEL_DEEP_THINK, THINKING_LEVEL_MEDIUM',
                 'Missing temporary chat markers: gemini_chat_temp, is-temporary-chat, temporary-chat-header, disable_temp_chat_soft_badge',
             ])
         );

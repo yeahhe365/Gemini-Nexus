@@ -17,20 +17,22 @@ describe('web thinking toggle UI', () => {
         button = installButton();
     });
 
-    it('defaults Flash to the active fast state when no thinking level is stored', () => {
+    it('defaults Hydrogen to the active fast state when no thinking level is stored', () => {
         syncWebThinkingToggle(button, { provider: 'web' }, '56fdd199312815e2');
 
         expect(button.hidden).toBe(false);
         expect(button.classList.contains('is-fast')).toBe(true);
-        expect(button.dataset.thinkingLevel).toBe('minimal');
+        expect(button.dataset.thinkingLevel).toBe('low');
+        expect(button.dataset.fastThinkingLevel).toBe('low');
         expect(button.getAttribute('aria-pressed')).toBe('true');
+        expect(button.title).toBe('Thinking: Low (Fast Mode)');
     });
 
     it('shows the fast active state for Gemini Web Flash models', () => {
         syncWebThinkingToggle(
             button,
             { provider: 'web', webThinkingLevel: 'minimal' },
-            'cf41b0e0dd7d53e5'
+            '8c46e95b1a07cecc'
         );
 
         expect(button.hidden).toBe(false);
@@ -42,26 +44,18 @@ describe('web thinking toggle UI', () => {
     });
 
     it('shows the fast active state for Gemini 4 Argon', () => {
-        syncWebThinkingToggle(
-            button,
-            { provider: 'web', webThinkingLevel: 'minimal' },
-            '95a4c0abcba24364'
-        );
+        syncWebThinkingToggle(button, { provider: 'web', webThinkingLevel: 'minimal' }, 'argon');
 
         expect(button.hidden).toBe(false);
         expect(button.classList.contains('is-fast')).toBe(true);
-        expect(button.dataset.thinkingLevel).toBe('minimal');
-        expect(button.dataset.fastThinkingLevel).toBe('minimal');
+        expect(button.dataset.thinkingLevel).toBe('low');
+        expect(button.dataset.fastThinkingLevel).toBe('low');
         expect(button.getAttribute('aria-pressed')).toBe('true');
-        expect(button.title).toBe('Thinking: Minimal (Fast Mode)');
+        expect(button.title).toBe('Thinking: Low (Fast Mode)');
     });
 
     it('uses deep mode wording for the high state', () => {
-        syncWebThinkingToggle(
-            button,
-            { provider: 'web', webThinkingLevel: 'high' },
-            '95a4c0abcba24364'
-        );
+        syncWebThinkingToggle(button, { provider: 'web', webThinkingLevel: 'high' }, 'argon');
 
         expect(button.hidden).toBe(false);
         expect(button.classList.contains('is-fast')).toBe(false);
@@ -74,7 +68,7 @@ describe('web thinking toggle UI', () => {
         syncWebThinkingToggle(
             button,
             { provider: 'official', webThinkingLevel: 'minimal' },
-            'cf41b0e0dd7d53e5'
+            '8c46e95b1a07cecc'
         );
 
         expect(button.hidden).toBe(true);

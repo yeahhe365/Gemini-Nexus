@@ -277,17 +277,17 @@ describe('AppController session restore behavior', () => {
 
     it('toggles Gemini Web thinking between high and the model fast level', () => {
         const { app, ui } = createAppHarness();
-        ui.modelSelect.value = 'cf41b0e0dd7d53e5';
+        ui.modelSelect.value = '56fdd199312815e2';
         ui.settings.connectionData = { provider: 'web', webThinkingLevel: 'high' };
 
         app.handleWebThinkingToggle();
 
-        expect(ui.settings.connectionData.webThinkingLevel).toBe('minimal');
+        expect(ui.settings.connectionData.webThinkingLevel).toBe('low');
         expect(ui.updateWebThinkingToggle).toHaveBeenCalledWith(ui.settings.connectionData);
         expect(window.parent.postMessage).toHaveBeenCalledWith(
             {
                 action: 'SAVE_WEB_THINKING_LEVEL',
-                payload: 'minimal',
+                payload: 'low',
             },
             '*'
         );

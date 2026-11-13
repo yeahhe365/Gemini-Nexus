@@ -502,6 +502,9 @@
                 options = createDedicatedModelOptions(settings, provider);
             } else {
                 options = window.GeminiWebModels.createOptions();
+                // A saved Web hash can predate the current catalog; resolve it so the
+                // quick-ask select keeps the user's model instead of the default one.
+                currentModel = window.GeminiWebModels.normalizeModel(currentModel);
             }
 
             this.view.updateModelOptions(options, currentModel);

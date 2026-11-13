@@ -1,5 +1,19 @@
 # Changelog
 
+## v5.7.0 - 2026-11-13
+
+### Models
+
+- **Gemini Web 渠道模型目录对齐实时选择器**：以 `otAQ7b` 模式清单与线上模型选择器双向校验后重排四个模型 —— `56fdd199312815e2`（**4 Hydrogen**，默认，`mode: 1`）、`8c46e95b1a07cecc`（**3.5 Flash-Lite**，`mode: 6`）、`e6fa609c3fa255c0`（**3.1 Pro**，`mode: 3`）、`argon`（**4 Argon**，`mode: 8`）。`4 Hydrogen` 取代 `3.8 Flash` 成为默认模型，`3.1 Pro` 重新回到可选列表。
+- **Web 模型标识跟进线上契约**：Flash-Lite 采用选择器实际下发的 `8c46e95b1a07cecc`，Argon 采用符号化模式 ID `argon`；`cf41b0e0dd7d53e5`、`95a4c0abcba24364`、`gemini-3.8-flash`、`gemini-3.1-pro` 等历史标识保留为别名。侧边栏与快速提问工具栏在恢复设置时都会先归一化旧标识，已保存的模型选择不会被静默重置为默认值。
+- **原生思考等级补入 `MEDIUM (4)`**：线上脚本的 thinking 枚举新增 `THINKING_LEVEL_MEDIUM = 4`，选择器「中」档实际下发 `4`；此前 `medium` 被错误映射为 `EXTENDED (2)`，现按模型最低档位分别映射（`minimal`/`low` → `1`、`medium` → `4`、`high` → `2`）。
+- **官方 API 默认模型升级至 Gemini 4**：默认模型改为 `gemini-4-hydrogen`，默认列表更新为 `gemini-4-hydrogen, gemini-4-argon, gemini-4-carbon, gemini-3.5-flash-lite`；`gemini-3.1-pro` 作为别名解析到当前仍在服务的 `gemini-3.1-pro-preview`。
+
+### Chore
+
+- 逆向协议文档、README 与设置页模型占位文案同步至新模型；drift 检查新增 `THINKING_LEVEL_MEDIUM` 标记。
+- 版本号升级至 `5.7.0`。
+
 ## v5.6.0 - 2026-10-15
 
 ### Features
